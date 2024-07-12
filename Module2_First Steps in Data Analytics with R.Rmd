@@ -1,0 +1,325 @@
+---
+title: "Practice / First Steps in Data Analytics"
+author: "Prachi Sardana"
+output:
+  word_document: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+## Question 1
+
+Loading the customer data from url and structuring the customer data using str() function showing the transaction data:
+
+```{r Q1  }
+customer_data = read.csv(url("http://artificium.us/assignments/55.data-analytics/a-55-103/customertxndata.csv"))
+str(customer_data)
+
+```
+
+## Question 2
+
+```{r Q2 }
+# Total revenue 
+total_revenue = sum(customer_data$rev, na.rm = TRUE)
+print(total_revenue)
+
+# Mean Number of visits 
+num_visits = mean(customer_data$numvisits, na.rm = TRUE)
+print(num_visits)
+
+# Median revenue
+revenue = median(customer_data$rev,na.rm = TRUE)
+print(revenue)
+
+# standard deviation of revenue
+standard_dev = sd(customer_data$rev, na.rm = TRUE)
+print(standard_dev)
+
+# To find the most common gender 
+
+# Created a vector to find the most common gender
+gender_num <- c(customer_data$gender)
+
+# Created the getmode function
+getmode <- function(gender_num) {
+   uniqv <- unique(gender_num)
+   uniqv[which.max(tabulate(match(gender_num, uniqv)))]
+}
+
+# Calculate the mode using the user function.
+mode.gender <- getmode(gender_num)
+print(mode.gender)
+
+
+
+```
+The total revenue of all transactions is `r paste("$",format(round(total_revenue,0), big.mark = ",", scientific = FALSE))`, while the median transaction amount is `r paste("$", round(revenue,2))` with a standard deviation of `r round(standard_dev, 2)`. The average number of visits was `r round(num_visits, 0)`. The majority of customers were `r paste0('"',mode.gender,'"')`.
+
+## Question3
+  
+## Data analysis
+
+There were 376 customers and the mean number of visits per customer was 3.4. The median revenue was US$ 35.8 (σ = 11.3). Most of the visitors were male.
+
+```{r Q3 }
+
+# Number of Customers = Total Revenue / (Average Transaction Value * Average Revenue per Visit)
+
+total_revenue <- sum(customer_data$rev) 
+print(total_revenue)
+
+# average revenue per visit = Total Revenue/ total number of visits
+
+total_num_visits <- sum(customer_data$numvisits)
+print(total_num_visits)
+
+avg_revenue_per_visit <- total_revenue/total_num_visits
+print(avg_revenue_per_visit)
+
+total_transactions <- length(customer_data$numtxns)
+print(total_transactions)
+
+
+average_transac_val <- total_revenue/total_transactions
+print(average_transac_val)
+
+num_customers <- total_revenue/(average_transac_val*avg_revenue_per_visit)
+print(num_customers)
+
+mean_visits_per_customer <- mean(table(customer_data$numvisits))
+print(mean_visits_per_customer)
+
+std_dev <- sd(customer_data$rev)
+print(std_dev)
+
+
+# narrative 
+# Created the getmode function
+getmode <- function(gender_num) {
+   uniqv <- unique(gender_num)
+   uniqv[which.max(tabulate(match(gender_num, uniqv)))]
+}
+
+# Calculate the mode using the user function.
+mode.gender <- getmode(gender_num)
+print(mode.gender)
+
+narrative <- sprintf("There were %f customers and the mean number of visits per customer was %f . The median revenue was US$ %f (σ = %f). Most of the visitors were %s.",num_customers,mean_visits_per_customer,revenue,std_dev, mode.gender)
+
+
+
+cat(narrative)
+
+```
+
+## Question 4
+
+Create a bar (aka column) chart of gender (x-axis) versus revenue (y-axis). Omit missing values, i.e., where gender is NA or missing. Use the plot() function rather than functions from ggplot2. Show only the chart and not the code that generated it. Add markdown text to comment on what the chart means.
+
+```{r Q4 }
+
+customer_data = read.csv(url("http://artificium.us/assignments/55.data-analytics/a-55-103/customertxndata.csv"))
+str(customer_data)
+
+customer_data <- na.omit(customer_data)
+
+customer_data.agg <- aggregate(customer_data$rev, list(customer_data$gender), FUN=mean)
+
+barplot(customer_data.agg$x,
+        main = "Revenue vs gender",
+        xlab = "Gender",
+        ylab = "Revenue (US$)",
+        names.arg = c("Male", "Female"),
+        col = "navy",
+        horiz = FALSE)
+
+```
+
+The bar chart indicates that in "male" customers the revenue was double compared to "female".
+
+## Question 5
+
+
+
+```{r Q5}
+
+# Number of visits
+x <- customer_data$numvisits
+
+# Revenue 
+y <- customer_data$rev
+
+# correlation between number of visits and revenue of customer data
+cor_xy <- cor.test(x, y, method=c("pearson"))
+
+
+```
+
+The pearson correlation coefficient is `round(cor_xy, 2)` which indicates a moderate positive relationship between the number of visits and the revenue.
+
+## Question 6
+
+Which columns have missing data? How did you recognize them? How would you impute missing values? In your markdown, add comments on missing data and imputation strategies.
+
+
+
+```{r Q6}
+
+customer_data = read.csv(url("http://artificium.us/assignments/55.data-analytics/a-55-103/customertxndata.csv"))
+#print(customer_data)
+
+# To find out which coloumns have missing data, we can use is.na() function
+
+na.test <- function(customer_data) {
+  missing_counts <- sum(is.na(customer_data))
+  
+  if (missing_counts > 0) {
+    print(names(customer_data)[sapply(customer_data, function(x) any(is.na(x)))])
+  } else {
+    print("No missing values found.")
+  }
+}
+
+na.test(customer_data)
+
+# In order to impute values, the NA's can be replaced with 0. For example 
+
+new_customer_gender <- replace(customer_data$gender, is.na(customer_data$gender),0)
+
+
+# Another imputation strategy is by replacing NA's with mean or median
+
+# Imputation with mean 
+new_customer_transaction = replace(customer_data$numtxns, is.na(customer_data$numtxns), mean(customer_data$numtxns, na.rm = TRUE))
+
+# Imputation with median
+new_customer_trans = replace(customer_data$numtxns, is.na(customer_data$numtxns), median(customer_data$numtxns, na.rm = TRUE))
+
+
+```
+
+
+The data set has missing data for "gender" and "numtxns" by using *na.test* function specifically.There are different imputation strategies like replacing NAs with O or imputing with mean or median.
+
+
+## Question7
+
+Impute missing transaction and gender values. Use the mean for transaction (rounded to the nearest whole number) and the mode for gender. Recalculate the descriptive statistics of (2) and repeat the markdown of (3) with the new (computed) values. Comment in the markdown on the difference.
+
+```{r Q7 }
+
+# Imputing the missing transaction value with mean number of transaction in customer data
+
+new_customer_transaction = replace(customer_data$numtxns, is.na(customer_data$numtxns), mean(customer_data$numtxns, na.rm = TRUE))
+round_trans <- round(new_customer_transaction)
+#print(round_trans)
+
+# Imputing the missing value of gender_num with mode function 
+getmode <- function(gender_num) {
+  uniqv <- unique(gender_num)
+   uniqv[which.max(tabulate(match(gender_num, uniqv)))]
+}
+
+# Calling the getmode function 
+mode.gender <- getmode(gender_num)
+print(mode.gender)
+
+
+# Total revenue 
+total_rev = sum(customer_data$rev, na.rm = TRUE)
+print(total_rev)
+
+# Mean Number of visits 
+num_visits = mean(customer_data$numvisits, na.rm = TRUE)
+print(num_visits)
+
+# Median revenue
+revenue = median(customer_data$rev,na.rm = TRUE)
+print(revenue)
+
+# standard deviation of revenue
+standard_dev = sd(customer_data$rev, na.rm = TRUE)
+print(standard_dev)
+
+
+
+```
+
+Using the imputed values, we have a total revenue of all transactions of `r paste0("$ ",format(round(total_rev,0), big.mark = ",", scientific = FALSE))`, while the median transaction amount is `r paste("$", round(revenue,2))` with a standard deviation of `r round(standard_dev, 2)`. The average number of visits was `r round(num_visits, 0)`. The majority of customers were `r paste0('"',mode.gender,'"')`.
+
+## Question 8 
+
+Splitting data into training data that consist of odd numbered cases and validation test for even number cases where larger set is used for training the model.On the other hand, smaller set is used for validation of the model.
+
+```{r Q8}
+# Created a new data frame x 
+x <- data.frame(customer_data)
+#print(x)
+
+# Calculated the number of rows in x 
+nrow <- nrow(x)
+
+# select only odds rows
+# Training set 
+train_Set <- x[seq(1,nrow,by = 2),]
+head(train_Set,4)
+
+# Test set 
+test_set<-x[seq(2,nrow,by=2),] #select only rows by 10
+head(test_set,4)
+
+```
+
+## Question 9
+
+```{r Q9 }
+
+
+training_set_mean <- mean(train_Set$rev)
+#print(training_set_mean)
+
+test_set_mean <- mean(test_set$rev)
+#print(test_set_mean)
+
+t_test <- t.test(train_Set$rev, test_set$rev)
+print(t_test)
+
+# mean of training data set is less than mean of test data set which indicates that the data is not proportionally distributed.
+# Based on paired t test shows that difference is not statistically significant since p value is = 0.0591
+
+
+```
+Calculating the mean revenue for the training `r round(training_set_mean, 2)`and the validation data sets `r round(test_set_mean, 2)` assuming that mean of training and test data is same but comparing them using **t**-test shows that **p-value** \> 0.05
+Based on the result the mean is not statistically significant as there is a slight differences in mean
+
+## Question 10 
+
+Used a random sample of 60% for training.Since the remaining data is 40%  and we need 20% of test data and 20% of validation data which means we need to split the remaining data into 50% to get test data and the validation data.
+
+```{r Q10 }
+
+# Set the seed so that same sample can be reproduced in the future
+set.seed(77654)
+
+# Split the 60% of data into training data set
+sample <- sample.int(n = nrow(customer_data), size = floor(.60*nrow(customer_data)), replace = F)
+train <- customer_data[sample, ]
+
+
+# Since the remaining data is 40%  and we need 20% of test data and 20% of validation data which means we need to split the remaining data into 50% to get test data and the validation data.
+remaining_data <-customer_data[-sample,]
+sample <- sample.int(n = nrow(remaining_data), size = floor(0.50*nrow(remaining_data)),replace = F)
+
+test <- remaining_data[sample, ]
+
+validation_data <- remaining_data[-sample,]
+#print(train)
+#print(test)
+#print(validation_data)
+
+
+```
+
+

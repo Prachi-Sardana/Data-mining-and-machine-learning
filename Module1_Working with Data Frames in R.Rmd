@@ -1,0 +1,127 @@
+---
+title: "Working with Data Frames in R"
+author: "Prachi Sardana"
+output:
+  word_document: default
+  html_notebook: default
+---
+
+## Question 1
+ 
+To load data csv file into a data frame df.wines
+
+```{r Q1_loadCSV}
+df.wines <- read.csv(url("https://s3.us-east-2.amazonaws.com/artificium.us/datasets/whitewines.csv"),header = TRUE,stringsAsFactors = FALSE)
+
+```
+
+## Question 2
+
+Inspect the data frame usig head function and determine it's structure
+
+```{r Q2_ echo = FALSE}
+
+head(df.wines,5)
+
+str(df.wines)
+```
+## Question 3
+
+How many wines have a residual sugar level above 0.5 and an alcohol level above 7?
+
+```{r Q3_ }
+
+# Subseting df.wines  data frame to determine how many wines have residual sugal above 0.5 and alcohol level above 7
+
+filter_df.wines <- subset(df.wines, df.wines$residual.sugar > 0.5 & df.wines$alcohol > 7)
+
+# To count the number of rows 
+
+count_rows <- nrow(filter_df.wines)
+
+# Using cat function to print the count of wines
+
+cat("Number of wines with Residual Sugar > 0.5 and Alcohol > 7:", count_rows, "\n")
+
+
+
+```
+## Question 4 
+
+How many wines have an alcohol content between 9.5 and 11.5 (exclusive) and a quality rating below 7?
+
+```{r Q4_ }
+# used subset function to filter out alcohol content between 9.5 and 11.5(exclusive) and quality rating above 7 
+
+filter_df.wines <- subset(df.wines, df.wines$alcohol >= 9.5 & df.wines$alcohol <= 11.5 & df.wines$quality < 7)
+
+# Counting rows using nrow from filter_df.wines
+count_rows <- nrow(filter_df.wines)
+
+# Using cat function to print the count of wines
+
+cat("Number of wines with alcohol content between 9.5 and 11.5 (exclusive) and a quality rating below 7:", count_rows, "\n")
+
+
+```
+## Question 5
+
+Are there any wines with an alcohol content above 14?
+
+```{r Q5_}
+# used subset function to filter df.wines containing alcohol content greater than 14
+
+filter_df.wines <- subset(df.wines, df.wines$alcohol > 14)
+
+# Counting rows using nrow for filter_df.wines
+
+count_rows <- nrow(filter_df.wines)
+
+# Using cat function to print the count of wines
+cat("Number of wines with alcohol content above 14:", count_rows, "\n")
+
+```
+## Question 6
+
+What are the median and mean alcohol content of all wines?
+
+```{r Q6_ }
+
+# mean alcohol content 
+
+mean_alcohol <- mean(df.wines$alcohol)
+print(mean_alcohol)
+
+# median alcohol content 
+
+median_alcohol <- median(df.wines$alcohol)
+print(median_alcohol)
+
+```
+## Question 7 
+
+Create a new column called *swill_index* in the data frame *df.wines* that is determined by multiplying the residual sugar content by the alcohol content and dividing the alcohol content by the quality.
+
+```{r Q7_}
+
+df.wines$swill_index <- (df.wines$alcohol/df.wines$quality)* df.wines$residual.sugar
+
+
+```
+## Question 8 
+
+The data frame *df.wines* should now have a new column named *alcohol.z* that determines the alcohol's *z*-score. The amount of standard deviations a value is from the mean is used to compute a feature's *z*-score. Create the alcohol.z column with the value: *mean(alcohol) - alcohol] / sd(alcohol)*. Then compute the mean and standard deviation for alcohol.
+
+```{r Q8_}
+
+# Mean alcohol content
+mean_alcohol <- mean(df.wines$alcohol)
+
+# Standard deviation 
+sd_alcohol <- sd(df.wines$alcohol)
+
+# Calculating the z score and adding the new coloumn to the data frame which is calculated by x-u/sd  formula
+df.wines$alcohol.z <- (mean_alcohol - df.wines$alcohol)/sd_alcohol
+
+```
+

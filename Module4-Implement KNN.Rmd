@@ -1,0 +1,303 @@
+---
+title: "Practice / Implement kNN"
+author: "Prachi Sardana"
+date: "2023-10-02"
+output:
+  word_document: default
+  html_notebook: default
+---
+
+## Question 1 
+loading the csv data for [Prostate cancer data] from the url ("https://s3.us-east-2.amazonaws.com/artificium.us/datasets/Prostate_Cancer.csv")
+
+```{r Q1_loadcsv}
+data <- read.csv(url("https://s3.us-east-2.amazonaws.com/artificium.us/datasets/Prostate_Cancer.csv"), header = TRUE, stringsAsFactors = FALSE)
+
+
+```
+
+## Question 2
+
+Inspecting the data frame using head and str function. Head displays 4 rows 
+str function is used to check the structure of data consisting 100 observations of 100 variables.
+
+```{r Q2_inspecting the data frame}
+
+
+head(data,4)
+str(data)
+print(summary(data))
+
+```
+## Question 3
+
+Checking for missing values using is.na function or null function 
+
+```{r Q3_missing_values}
+
+### Checking for any missing values using is.na function or null function in data
+which(is.na(data))
+is.null(data)
+
+# Since there are no missing values, will go ahead with the normalization.
+
+```
+## Question 4
+
+Feature scaling using z score normalization and creating a new dataframe with normalized features 
+
+```{r Q4_scalingdata}
+
+## Structured the data
+str(data)
+
+## Calculating the z score normalization 
+zscore_normalization <- function(z){
+  mean_z <- mean(z)
+  sd_z <- sd(z)
+  z_score <- (z - mean_z)/sd_z
+  return(z_score)
+}
+
+
+# Perform Normalization for each column
+num_col <- ncol(data)
+
+# for every coloumn starting from 3rd column since id and diagnosis results are non numeric loop over and perform z score normalization of data 
+for (column in 3:num_col){
+  normalize_coloumn <- zscore_normalization(data[,column])
+  data[,column] <- normalize_coloumn
+}
+
+
+# Added normalized data as a variable 
+normalized_data <- data[-1]
+print(normalized_data)
+
+
+
+```
+
+Splitting the data into training and test data set where 80% of normalized data is training set and 20% validation data Checked the splitting is accurate or not through 
+`dim()` function.
+
+```{r Q5_Splittingdata}
+
+# Draw 80% of the data from total 'n' rows of the data  
+sample <- sample.int(n = nrow(normalized_data), size = floor(.80*nrow(normalized_data)), replace = F)
+
+# Training data 
+df.train <- normalized_data[sample, ]
+
+# Validation data
+df.val  <- normalized_data[-sample, ]
+
+
+# Checking whether training and validation test splitting accurately or not using dimension function
+dim(df.train)
+
+dim(df.val)
+
+```
+Before applying xknn function we need to find the most frquent occurance of a vector, develop a function to calculate Euclidean distance by Distance = *sqrt((x2 - x1)^2 + (y2 - y1)^2)* formula, find the closest neighbors using k.closest function 
+and apply xknn function for the following argument labels, training_features, K, predict_data
+
+```{r }
+
+## To find most frequent occurrence of a vector using KNN mode function
+
+kNNMODE<- function(z){
+  vz <- unique(z)
+  return (vz[which.max(tabulate(match(z, vz)))])
+}
+
+## Euclidean distance to calculate the distance between the two data points
+
+kNNDIST <- function(y1,y2){
+  d <- 0 
+  for (i in 1:length(y1)){
+    d <- d + (y1[i]-y2[i])^2
+  }
+  return(sqrt(d))
+}
+
+
+
+## find closest k neighbors
+k.closest <- function(neighbors,k)
+{
+  # uses the order function from R to sort the vector 
+  # of neighbors by distance
+  ordered.neighbors <- order(neighbors)
+  
+  # extracts only the top k neighbors
+  # returns the indexes of those closest neighbors
+  k.closest <- ordered.neighbors[1:k]
+}
+
+## find distances to all neighbors
+kNNNeighbors <- function (train, test)
+{
+   m <- nrow(train)
+   ds <- numeric(m)
+   for (i in 1:m) {
+     y1 <- train[i,]
+     ds[i] <- unlist(kNNDIST(y1,test))
+   }
+   
+   return(ds)
+}
+
+## kNN algorithm
+xkNN <- function (labels, 
+                  training_features,
+                  k,
+                  predict_data) {
+  nb <- kNNNeighbors(training_features, predict_data)
+ 
+  f <- k.closest(nb,k)
+ 
+  predicted.label <- kNNMODE(labels[f])
+  
+  return (predicted.label)
+}
+
+```
+
+
+To calculate the accuracy i.e the percentage of accurate classification, looped over the training data used function to calculate the accuracy (percentage of correct classifications) by predicting the validation data target using kNN for different values of k (from 3 to (√d)
+where d are the number of dimensions in data, i.e., the number of predictor features.
+
+
+```{r}
+
+# K = 3 as per given question
+k = 3
+# dimensions = sqrt(length(df.val))
+dim = sqrt(length(df.val))
+dimension <- as.integer(dim)
+
+# looped over for i in K to dimension
+  for (i in k:dimension){
+    # initial res = 0
+    res = 0
+    # for j in 1 to rows of validation data 
+      for (j in 1:nrow(df.val)){
+        
+        # predicting validation target using x knn function
+        if(df.val[1][j,] == xkNN(df.train$diagnosis_result,df.train[-1] , i,  df.val[-1][j,] )) {
+          # res count + 1
+           res <- res + 1
+        }
+        
+      }
+    
+    # printing the value of k as per question it's 3
+   print(i)
+   # printing the accuracy of KNN calculated with Euclidean distance 
+   # Printing the accuracy which is equal to no. of correct predictions/total predictions*100
+    print(paste0("The accuracy for Euclidean k = ", ((res/nrow(df.val))*100)))
+  }
+
+```
+
+Before applying xknn function we need to find the most frquent occurance of a vector, develop a function to calculate Manhattan Distance = `|x1 - x2| + |y1 - y2|` formula, find the closest neighbors using k.closest function and apply xkNNWMAN function for the following argument labels, training_features, K, predict_data
+
+```{r }
+
+## To find most frequent occurance of a vector 
+
+kNNMODE<- function(z){
+  vz <- unique(z)
+  return (vz[which.max(tabulate(match(z, vz)))])
+}
+
+## Manhattan distance 
+
+mANDIST <- function(y1,y2){
+  d <- 0 
+  for (i in 1:length(y1)){
+    d <- d + abs(y1[i]-y2[i])
+  }
+  return(d)
+}
+
+
+
+## find closest k neighbors
+k.closest <- function(neighbors,k)
+{
+  # uses the order function from R to sort the vector 
+  # of neighbors by distance
+  ordered.neighbors <- order(neighbors)
+  
+  # extracts only the top k neighbors
+  # returns the indexes of those closest neighbors
+  k.closest <- ordered.neighbors[1:k]
+}
+
+## find distances to all neighbors
+kNNNeighbors1 <- function (train, test)
+{
+   m <- nrow(train)
+   ds <- numeric(m)
+   for (i in 1:m) {
+     y1 <- train[i,]
+     ds[i] <- unlist(mANDIST(y1,test))
+   }
+   
+   return(ds)
+}
+
+## kNN algorithm with Manhattan
+xkNNWMAN <- function (labels, 
+                  training_features,
+                  k,
+                  predict_data) {
+  nb <- kNNNeighbors1(training_features, predict_data)
+ 
+  f <- k.closest(nb,k)
+ 
+  predicted.label <- kNNMODE(labels[f])
+  
+  return (predicted.label)
+}
+
+```
+
+To calculate the accuracy i.e the percentage of accurate classification, looped over the training data used function to calculate the accuracy (percentage of correct classifications) by predicting the validation data target using kNNWMAN for different values of k (from 3 to (√d)
+where d are the number of dimensions in data, i.e., the number of predictor features.
+
+
+```{r}
+# K = 3 as per given question
+k = 3
+# Dim = square root of length of validation data
+dim = sqrt(length(df.val))
+dimension = as.integer(dim)
+
+# for i in k to dimension
+  for (i in k:dimension){
+    # res = 0
+    res = 0
+    # for j in 1 to rows of validation data
+      for (j in 1:nrow(df.val)){
+        
+        # Find KNN with manhattan distance of validation data
+        if(df.val[1][j,] == xkNNWMAN(df.train$diagnosis_res,df.train[-1] , i, df.val[-1][j,] )) {
+          # res = res +1
+           res <- res + 1
+        }
+        
+      }
+    # printing the given k 
+   print(i)
+   # printing the accuracy of KNN calculated with manhattan distance 
+   #  accuracy is equal to no. of correct predictions/total predictions*100
+   print(paste0("The accuracy for manhattan k = ", ((res/nrow(df.val))*100)))
+
+  }
+```
+
+Based on the above results if we check at k = 3 , the accuracy value for Euclidean distance is 80% while the k value for Manhattan distance = 85% which indicate that the prediction is better with Manhattan in this case. While if we need to calculate the optimal K we need to loop over k to number of dimensions in data to check for which value of k gives better accuracy.
+

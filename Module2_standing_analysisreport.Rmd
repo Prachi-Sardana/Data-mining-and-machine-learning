@@ -1,0 +1,77 @@
+---
+title: "Generate Synthetic Data in R"
+output:
+  pdf_document: default
+  html_notebook: default
+  word_document: default
+---
+
+## ** ANALYSIS REPORT **
+
+Loading the datafile game schedule.csv
+
+```{r loadCSV}
+data_file <- read.csv("C:/Users/sanya/Documents/prachi/OneDrive/R programming - Data analytics/game-schedule.csv")
+
+```
+
+Calculating standings (2-1-0 system)
+
+```{r calculate_standings}
+
+# To calculate the standings used aggregrate function to find the number of wins, overtime losses and total games played for each team
+standings <- aggregate(cbind(Wins = data_file$home.team.goals > data_file$away.team.goals,
+                              OvertimeLosses = data_file$home.team.goals == data_file$home.team.goals & data_file$ot == 1) ~ home.team, data = data_file, FUN = sum)
+
+
+# To find the loss calculated the total number of games - (wins and overtime losses.)
+
+standings$Losses <- nrow(data_file) - standings$Wins - standings$OvertimeLosses
+
+# To compute specific scoring system given 2 points for winning and 1 point or Overtime losses 
+standings$Points <- 2 * standings$Wins + standings$OvertimeLosses
+
+# Sort standings by points
+standings <- standings[order(-standings$Points), ]
+
+# Rename columns
+colnames(standings) <- c("Team", "Wins", "OvertimeLosses", "Losses", "Points")
+
+# Print the standings table
+print(standings)
+
+
+```
+Based on the above data , where *2-1-0 system* , 2 points score were given for winning team ,1 point for Overtime losses and 0 for team that lost in regulation. The data suggests that *Frozen fury team* were the top performers scoring overall *44* points with *20* wins and *4* overtime losses. Followed by *Icy Ferno team* having overall score of *38* points even though there were *8* overtime losses.Looking at all other teams , majority of them have their points lying between 31-37 while only 2 teams having scoring less than *30* (Frostbite Phantoms,Glacial Guardians, Crystal Crusaders and Snowstorm Stingers)
+Over time wins are important type of scoring system as it affects the overall points along with the winning. Teams with balanced wins and overtime losses perform well.Teams that perform well in overtime can offset some regulation losses.
+
+
+Calculating standings (3-2-1 system)
+
+```{r}
+
+# To calculate the standings used aggregrate function to find the number of wins, overtime wins ,total games played for each team, overtime losses
+
+standings2 <- aggregate(cbind(Wins = data_file$home.team.goals > data_file$away.team.goals,
+                               OvertimeWins = data_file$home.team.goals == data_file$away.team.goals & data_file$ot == 1,
+                               OvertimeLosses = data_file$away.team.goals > data_file$home.team.goals & data_file$ot == 1) ~ home.team, data = data_file, FUN = sum)
+
+
+# Standings on the basis of 3,2,1 scoring system( 3 points for winning , 2 for overtime win and 1 for loser in overtime)
+
+standings2$Points <- 3 * standings2$Wins + 2 * standings2$OvertimeWins + 1 * standings2$OvertimeLosses
+
+
+# Sorted standings by points
+standings2 <- standings2[order(-standings2$Points), ]
+
+# Renamed the columns
+colnames(standings2) <- c("Team", "Wins", "OvertimeLoss", "OvertimeWins", "Points")
+
+# Print the standings table with the new scoring system
+print(standings2)
+
+
+```
+
+Based on the above standings data , in 3-2-1 system ,where 3 points score were given for winning team, 2 points for Overtime wins and 1 for overtime loss. The above data suggests that Frozen furry scored the highest points overall *61* points, with *1* Overtime wins and winning *20* games in total. None of the teams lost in overtime. While some teams like Frostfire Foxes, Winter Warriors, Glacial Guardians, Iceberg Invaders won *2* overtime wins in total. 	Arctic Avalanche scores *52* points overall with 1 over time win. On the other hand some teams had the score ranging from *40 - 48*. The least points scoring being *34 and 33* for Snowstorm Stingers and Crystal Crusaders team.

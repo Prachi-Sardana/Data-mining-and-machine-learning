@@ -1,0 +1,127 @@
+---
+title: "Practice / Getting to know R"
+author: "Prachi Sardana"
+date: "15/09/23"
+output:
+  html_document:
+    df_print: paged
+---
+
+## Question1 
+
+To load data csv file into a dataframe df.flights and used stringAsFactors = False so that the character coloumns don't convert into the factors.
+
+```{r}
+df.flights <- read.csv(url("https://s3.us-east-2.amazonaws.com/artificium.us/datasets/FlightsWithAirlines.csv"),stringsAsFactors = FALSE)
+
+```
+
+## Question 2 
+
+The structure of data consitute 18 observation of 14 Variables showing the summary of dataframe
+
+```{r Q2_str , echo= FALSE}
+
+str(df.flights)
+
+```
+
+## Question 3
+
+used the head function to display first 4 rows
+
+```{r Q3_head , echo = FALSE}
+
+head(df.flights,4)
+
+```
+
+## Question 4
+
+used tail function to display last 5 rows of a data frame
+
+```{r Q4_tail ,echo=FALSE}
+
+tail(df.flights,5)
+
+```
+
+## Question 5
+
+selected carrier, flight, origin, and destination columns using a vector from the data frame
+
+```{r Q5_}
+
+specific_col <- df.flights[,c("carrier","flight","origin","dest")]
+
+print(specific_col)
+
+```
+
+
+## Question 6 
+
+To calculate the average mean departure delay and display the result in R using cat function
+
+```{r Q6_}
+
+mean_dep_delay <- mean(df.flights$dep_delay)
+
+cat("Average(mean) departure delay is",round(mean_dep_delay),1)
+
+```
+
+## Question 7 
+
+Created an empty column tod to the data frame 
+
+used if else statement based on the syntax ifelse(test_expression,x,y)
+
+If the departure hour is less than 10 , fill the value of am otherwise pm 
+
+Displayed the carrier, flight, dep_hr, and the new tod columns.
+
+
+```{r Q7_}
+# Created an empty dataframe tod
+
+df.flights$tod <- 0
+
+# used ifelse statement based on the syntax ifelse(test_expression, x, y)
+
+# where test_expression is the logical condition or vector, x is the value to return when condition = True and y is the value to return when condition = False
+
+df.flights$tod <- ifelse(df.flights$dep_hr < 12, "am", "pm")
+
+specific_col <- df.flights[,c("carrier","flight","dep_hr","tod")]
+print(specific_col)
+
+```
+
+
+## Question 8 
+
+For each flight, display the carrier, flight number, and the actual departure time (scheduled departure plus departure delay) for flights that were delayed. Display the time in the format hh:mm in 24-hour format, e.g., display 23:20 rather than 11:20 or 11:20PM.
+
+```{r}
+
+# creating a data frame delayed_flights by subsetting the df.flights that have departure delay greater than 0 and includes the following coloumns
+
+delayed_flights <- df.flights[df.flights$dep_delay > 0,c("carrier", "flight","dep_hr","dep_min","dep_delay")]
+
+
+# actual departure = scheduled departure time in min + departure hour * 60 + the departure delay in min 
+
+actual_departure <- delayed_flights$dep_min + delayed_flights$dep_hr*60 + delayed_flights$dep_delay
+
+# create a new coloumn act_dep_hh in the delayed flights  
+# as.POSIXlt function covert the time into list of date-time components
+# format function is used to extract and format the "hour:minute" component of the date-time in a 24-hour format ("%H:%M").
+
+
+delayed_flights$act_dep_hh <- format(as.POSIXlt(actual_departure, origin = "2023-09-01"), format = "%H:%M")
+print(delayed_flights)
+
+
+```
+

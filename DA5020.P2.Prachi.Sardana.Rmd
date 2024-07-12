@@ -1,0 +1,217 @@
+---
+title: "Untitled"
+author: "Prachi Sardana"
+date: "2024-03-23"
+output: html_document
+---
+
+
+Loading the required libraries 
+
+```{r}
+
+library(DBI)
+library(RSQLite)
+
+```
+
+
+Step1 - Identifying the dimensions of each dimension table 
+
+```{r}
+
+
+# Reading the first dimension table business.csv file 
+business_csv_data <- read.csv("C:/Users/sarda/Downloads/business.csv")
+
+# Displaying the dimensions of business csv data 
+dim(business_csv_data)
+
+
+```
+
+
+```{r}
+
+
+# Displaying the first 10 rows of business csv data 
+head(business_csv_data, 10)
+
+
+
+```
+
+
+```{r}
+
+# Reading the second dimension table bed_type 
+bed_type_csv <- read.csv("C:/Users/sarda/Downloads/bed_type.csv")
+
+# Displaying the dimension of bed_type csv data 
+dim(bed_type_csv)
+
+
+
+```
+
+
+```{r}
+
+# Displaying the first 10 rows of bed_type csv data 
+head(bed_type_csv, 10)
+
+```
+
+
+```{r}
+
+# Reading the fact table fact_csv 
+bed_fact_csv <- read.csv("C:/Users/sarda/Downloads/bed_fact.csv")
+
+# Displaying the dimensions of bed_fact_csv data 
+dim(bed_fact_csv)
+
+```
+
+```{r}
+
+
+head(bed_fact_csv, 10)
+
+
+```
+
+In business csv data , there are 6 vaiables "ims_org_id," "business_name," "ttl_license," "ttl_census," "ttl_staffed," and "bed_cluster_id" and out of these variables, ‘ttl_license,’ ‘ttl_census,’ and ‘ttl_staffed’  are quantitative measures i.e these are numerical values which can change over time and these can be considered as facts since these variables provide information about the licensing , census and staffing levels of various entities. 
+While ims_org_id serves as a primary key which identifying each organization and the bed_cluster_id categorize beds into different clusters and each cluster represents a distinct category or group of beds , business name a non measurable entity and hence these 3 variables serve as dimensions. 
+
+In bed_type csv table, there are 3 variables including 'bed_id', 'bed_code', 'bed_desc'are dimension variables which remain constant and don't change over time. These variables provide descriptive information related to bed types with their code and id. 
+
+In bed_fact_csv table ,  ‘ims_org_id,’ ‘business_name,’ and ‘bed_cluster_id are three variables which are non measurable and hence these variables serve as dimensions which tells descriptive information, consist of unique identifiers and categorical groupings that do not represent the quantifiable data. 
+
+Overall business.csv contain the measurable facts and descriptive dimensions while bed_type csv consist of only descriptive dimensions. 
+
+
+
+Step 2: Identify the Facts variables from the single Fact Table
+
+In business csv data , there are 6 vaiables "ims_org_id," "business_name," "ttl_license," "ttl_census," "ttl_staffed," and "bed_cluster_id" and out of these variables, ‘ttl_license,’ ‘ttl_census,’ and ‘ttl_staffed’  are quantitative measures i.e these are numerical values which can change over time and these can be considered as facts since these variables provide information about the licensing , census and staffing levels of various entities. 
+
+In bed_fact.csv, the 'license_beds', 'census_beds', and staffed_beds' serve as facts since these are the measurable entities and can change over time. These variables are numerical values that provide information about the licensing, census, and staffing levels, making them suitable for analysis and tracking.
+
+
+
+Step 3a: Analysis for Leadership 
+
+
+```{r}
+
+# Specifying the path of creating_database 
+creating_database <-  "C:/Project Machine learning/DA5020/practicum2.db"
+
+
+# Creating a database connection to connect the databse to creating_database variable
+db_connection <- dbConnect(RSQLite::SQLite(), dbname = creating_database)
+
+
+# Writing the business csv data to SQlite database  where the name specifies the data to be written in the table and value represents the name of table in database.
+
+dbWriteTable(db_connection, name = "business_csv_data", value = business_csv_data, overwrite = TRUE)
+
+# Writing the bed type csv data to SQlite database where the name specifies the data to be written in the table and value represents the name of table in database.
+
+dbWriteTable(db_connection, name = "bed_type_csv", value = bed_type_csv, overwrite = TRUE)
+
+
+# Writing the bed_fact csv data to SQlite database where the name specifies the data to be written in the table and value represents the name of table in database.
+dbWriteTable(db_connection, name = "bed_fact_csv", value = bed_fact_csv, overwrite = TRUE)
+
+
+```
+
+Step3a 
+
+Identify which hospitals have an Intensive Care Unit (ICU bed_id = 4) bed or a Surgical Intensive Care
+Unit (SICU bed_id = 15) bed or both
+Create three summary reports that show the following:
+
+1. License beds: List of Top 10 Hospitals ordered descending by the total ICU or SICU license beds.
+
+Include just two variables, hospital_name (business_name) and the total license beds from above as one summary fact. But include only 10 rows in your output table.
+
+
+
+```{r}
+
+
+
+
+License_beds <- dbGetQuery(db_connection, "SELECT DISTINCT business_csv_data.business_name AS hospital_name,
+                            SUM(CASE WHEN bed_fact_csv.bed_id = 4 OR bed_fact_csv.bed_id = 15 THEN bed_fact_csv.license_beds ELSE 0 END) AS total_license_beds
+                        FROM business_csv_data
+                        INNER JOIN bed_fact_csv ON business_csv_data.ims_org_id = bed_fact_csv.ims_org_id
+                        GROUP BY hospital_name
+                        ORDER BY total_license_beds DESC
+                        LIMIT 10;")
+
+
+print(License_beds)
+
+
+
+
+```
+
+2) Do the same thing for Census beds. List of Top 10 Hospitals ordered by total icu or sicu census beds.
+Include just two variables, hospital_name (business_name) and the total census beds from above as one
+summary fact. Include only 10 rows again.
+
+
+
+
+```{r}
+
+
+Census_beds <- dbGetQuery(db_connection, "SELECT DISTINCT business_csv_data.business_name AS hospital_name,
+                            SUM(CASE WHEN bed_fact_csv.bed_id = 4 OR bed_fact_csv.bed_id = 15 THEN bed_fact_csv.census_beds ELSE 0 END) AS total_census_beds
+                        FROM business_csv_data
+                        INNER JOIN bed_fact_csv ON business_csv_data.ims_org_id = bed_fact_csv.ims_org_id
+                        GROUP BY hospital_name
+                        ORDER BY total_census_beds DESC
+                        LIMIT 10;")
+
+
+print(Census_beds)
+
+
+
+```
+
+
+3) Do the same thing for Staffed beds. List of Top 10 Hospitals ordered by the total icu or sicu staffed
+beds. Include just two variables, hospital_name (business_name) and the sum of staffed beds from
+above as one summary fact. Include only 10 rows again
+
+```{r}
+
+
+
+Staffed_beds <- dbGetQuery(db_connection, "SELECT DISTINCT business_csv_data.business_name AS hospital_name,
+                            SUM(CASE WHEN bed_fact_csv.bed_id = 4 OR bed_fact_csv.bed_id = 15 THEN bed_fact_csv.staffed_beds ELSE 0 END) AS total_staffed_beds
+                        FROM business_csv_data
+                        INNER JOIN bed_fact_csv ON business_csv_data.ims_org_id = bed_fact_csv.ims_org_id
+                        GROUP BY hospital_name
+                        ORDER BY total_staffed_beds DESC
+                        LIMIT 10;")
+
+
+print(Staffed_beds)
+
+
+
+
+
+```
+
+
+
+

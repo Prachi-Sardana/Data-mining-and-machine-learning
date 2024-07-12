@@ -1,0 +1,1789 @@
+---
+title: "Project - Modelling to predict the dementia a neurodegenerative disorder"
+subtitle: DA5030
+output: html_notebook
+date: 12-05-2023, "Fall 2023"
+author: Prachi Sardana
+
+
+output:
+
+  pdf_document: default 
+---
+ 
+
+# Detection of dementia 
+
+ Resource - About the Dataset - **https://www.kaggle.com/datasets/shashwatwork/dementia-prediction-dataset**
+
+# Introduction 
+Dementia is a neuro degenerative disorder that results in cognitive decline ultimately leading to memory problems, thinking and behaviour impacting the overall person's ability to do every day activities. Apart from the memory impairement, it results in disruption in thought patterns, including emotional problems, difficulties with language and decreased motivation. Dementia ultimately has a significant effect on the individual, caregivers, and on social relationships in general.A diagnosis of dementia requires the observation of a change from a person's usual mental functioning and a greater cognitive decline than what is caused by normal aging.Dementia results from a variety of diseases and injuries that primarily or secondarily affect the brain, such as Alzheimer's disease or stroke.Dementia is one of the major causes of disability and dependency among older people worldwide. It can be overwhelming, not only for the people who have it, but also for their carers and families. There is often a lack of awareness and understanding of dementia, resulting in stigmatization and barriers to diagnosis and care. The impact of dementia on carers, family, and society at large can be physical, psychological, social and economic.
+
+
+# Goal of the Project 
+
+The goal of the project is to perform machine learning algorithms and predict the best modelling approach to predict the target group dementia, non dementia and converted among the subjects ( which are patients). The non demented are the patients which had no dementia , demented cases are those where subject id's had dementia and converted are those subject id's which became demented or non demented after the last vist. THe main aim of the project is to perform multi class classification and use non parametric methods like Naive Bayes, Random Forest and Support vector machines to predict demented, non demented and converted cases. 
+
+# Understanding the data 
+## Summary- This set consists of a longitudinal collection of 150 subjects aged 60 to 96. Each subject was scanned on two or more visits, separated by at least one year for a total of 373 imaging sessions. For each subject, 3 or 4 individual T1-weighted MRI scans obtained in single scan sessions are included. The subjects are all right-handed and include both men and women. 72 of the subjects were characterized as nondemented throughout the study. 64 of the included subjects were characterized as demented at the time of their initial visits and remained so for subsequent scans, including 51 individuals with mild to moderate Alzheimer’s disease. Another 14 subjects were characterized as nondemented at the time of their initial visit and were subsequently characterized as demented at a later visit.
+
+
+# About the Dataset 
+ 
+
+## The dementia dataset consist of the following features 
+
+### 1. SubjectID - Unique identifier for individual subjects
+
+### 2. MRI ID - Unique identifier for each test. One subject may have more than one MRI ID.
+
+### 3. Group - Converted/Demented/Non demented (Target )
+
+### 4. Visit- Number of visit by a subject since last visit(Number of days)
+
+### 5. MR Delay -  Delay of visit by a subject since last visit (Number of days)
+
+### 6. M.F - Male and female gender
+
+### 7. Hand - Handedness (all the subjects are right handed)
+
+### 8. Age 
+
+### 9. Educ - Education(years)
+
+### 10.  SES - Socio Economic Status assessed by Hollingshead index of social position which is classified into categories from 1(Highest status) to 5( lowest status)
+
+### 11. MMSE - Mini Mental State Examination Value is a 30-point questionnaire that is used extensively in clinical and research settings to measure cognitive impairment. It is used to estimate the severity and progression of cognitive impairment and to follow the course of cognitive changes in an individual over time. Any score greater than or equal to 24 points (out of 30) indicates a normal cognition. Below this, scores can indicate severe (≤9 points), moderate (10–18 points) or mild (19–23 points) cognitive impairment. The raw score may also need to be corrected for educational attainment and age. That is, a maximal score of 30 points can never rule out dementia.
+
+### 12. CDR - Clinical dementia rating is a 5-point scale used to characterize six domains of cognitive and functional performance applicable to Alzheimer disease and related dementias: Memory, Orientation, Judgment & Problem Solving, Community Affairs, Home & Hobbies, and Personal Care( 0 = no dementia, 0.5  very mild dementia, 1 = mild dementia, 2 = moderate dementia, 3 = severe dementia)
+
+### 13. eTIV - Estimated total intracranial volume in mm3 which is an important covariate for volumetric analyses of the brain and brain regions, especially in the study of neurodegenerative diseases, where it can provide a proxy of maximum pre-morbid brain volume.
+
+### 14. nWBV - Normalized whole-brain volume, expressed as a percent of all voxels (“constant” for any value of estimated total intracranial volume)
+
+### ASF - Atlas Scale Factor; volume scaling factor for brain size (“constant” for any value of estimated total intracranial volume) is a unified approach for morphometric and functional data analysis in young, old, and demented adults using automated atlas-based head size normalization: reliability and validation against manual measurement of total intracranial volume.
+ 
+ 
+#Installing necessary packages
+```{r}
+
+# Loading necessary packages 
+library(rpart)
+#nstall.packages("caTools")
+library(caTools)
+#nstall.packages("party")
+library(party)
+library(randomForest)
+# install.packages("gmodels")
+library(gmodels)
+#install.packages("klaR")
+#install.packages("e1071")
+library(e1071)
+# install.packages("ggplot2")  
+library(ggplot2)                        
+# install.packages("reshape2")
+library(reshape2)
+# install.packages(klaR)
+library(klaR)
+#install.packages("caret")
+library(caret)
+#install.packages("kernlab")
+library(kernlab)
+#install.packages("pROC")
+library(pROC)
+
+
+
+```
+ 
+# Data Acquisition
+
+## **Loading the data** 
+
+Loading the dementia data through url. Checking the data using structure function for the total number of observations and variables. Displaying the first 5 rows of dementia data using head function. 
+```{r}
+
+# Loading the dementia data  
+url <-  "https://drive.google.com/uc?export=download&id=1STAWzNuZVQHPDo8XvCywqSPLW4UwfXKT"
+dem_data <- read.csv(url, stringsAsFactors = FALSE, header = TRUE)
+
+# Structure of dementia data that consist of 373 observations of 15 variables
+str(dem_data)
+
+# Displaying first 5 rows of dementia data 
+head(dem_data,5)
+ 
+```
+
+# Data Exploration
+
+**Exploratory Data plots**
+
+Looking at the summary of the data to check the data distribution. Three are features which are covering wide range of variables including Age: The age of subjects ranges from 60 to 98 years old, with a mean around 77 years, Education: The education level ranges from 6 to 23 years, with a mean around 14.6 years., SES: The socioeconomic status ranges from 1 to 5, with a mean around 2.46,MRI Delay: The delay in MRI scans ranges widely from 0 to 2639 days, with a mean around 595 days, MMSE: MMSE scores range from 4 to 30, with a mean around 27.34, eTIV: Estimated Total Intracranial Volume ranges from 1106 to 2004, with a mean around 1488. Plotting histograms of features to look at the distribution of the data to understand the central tendency, spread , skewness , presence of any outliers in the data or whether it follows normal distribution or not. There are few features which doesn't follow normal distribution and highly skewed like MMSE, MR.Delay.
+
+```{r}
+
+# Looking at the summary of dementia data 
+summary(dem_data)
+ 
+# Histograms for Age, EDUC, eTIV, nWBV,Visit,SES,MR.Delay,CDR,ASF,MMSE
+
+par(mfrow = c(2, 2)) # Set up a grid of 2x2 plots
+
+hist(dem_data$Age, main = "Histogram of Age", xlab = "Age")
+
+hist(dem_data$Visit , main = "Histogram of Visit", xlab = "Visit")
+
+hist(dem_data$EDUC, main = "Histogram of Education", xlab = "Education")
+
+hist(dem_data$SES, main = "Histogram of SES", xlab = "SES")
+
+hist(dem_data$MR.Delay, main = "Histogram of MR.Delay", xlab = "MR.Delay")
+
+hist(dem_data$CDR, main = "Histogram of CDR", xlab = "CDR")
+
+
+hist(dem_data$ASF, main = "Histogram of ASF", xlab = "ASF")
+
+hist(dem_data$MMSE, main = "Histogram of MMSE", xlab = "MMSE")
+
+hist(dem_data$eTIV, main = "Histogram of eTIV", xlab = "eTIV")
+
+hist(dem_data$nWBV, main = "Histogram of nWBV", xlab = "nWBV")
+
+
+
+ 
+```
+
+
+*Checking the columns if they are normally distributed or not using Shapiro wilk test.*
+
+```{r}
+ 
+ 
+# Initializing an empty vector to store non-normally distributed columns
+
+non_normal_columns <- c()
+ 
+# Looping through each column of the dataset
+
+for (col in names(dem_data)) {
+
+  # Checking if the column is numeric
+
+  if (is.numeric(dem_data[[col]])) {
+
+    # Performing Shapiro-Wilk test for normality
+
+    shapiro_test <- shapiro.test(dem_data[[col]])
+
+    # Check if the p-value is less than 0.05 (common significance level)
+
+    if (shapiro_test$p.value < 0.05) {
+
+      # If the p-value is less than 0.05 , column is not normally distributed
+
+      non_normal_columns <- c(non_normal_columns, col)
+
+      cat("Column", col, "is not normally distributed.\n")
+
+    }
+
+  }
+
+}
+ 
+ 
+```
+**Inference** Based on the Shapiro Wilk test columns like Visit,MR.Delay, EDUC, SES, MMSE, CDR, eTIV, nWBV, ASF are not normally distributed. 
+
+
+**Detection of outliers for continuous features**
+
+Identifying the outliers in the data is important as significantly impact statistical measures such as mean, standard deviation and correlation coefficients. By identifying the outliers , the statistical analysis can be more accurate and reliable. Moreover, the model performance is affected if the outliers are very high and affect overall accuracy of machine learning models. There are some models which are very sensitive to outliers and as a consequence reduces the model performance and make biased predictions.To check the outliers in the column, using z score z which is greater than the threshold and displaying the column names with Outliers count. Removing the outliers from the columns of dementia data and remove those outliers using z scores.
+
+
+
+
+```{r}
+
+# Creating a function outliers to calculate the outliers in column of dementia data 
+outlier <- function(column){
+  # calculating mean and standard deviation of column
+  mean_val <- mean(column)
+  
+  sd_val <- sd(column)
+  # Calculating the z-score for column using mean and standard deviation 
+  
+  z_val <-  abs((column - mean_val) /  sd_val)
+  # print(z_val)
+  
+  # Finding outliers where z scores is greater than 3 threshold
+  
+  outliers <- which(z_val > 3)
+  return(outliers)
+}
+
+
+# Creating an empty vector to store the row outliers 
+row_outliers <- c()
+# Looping through each column of the data set
+for (column in names(dem_data)) {
+  
+  # Checking the numeric columns in data 
+  if (is.numeric(dem_data[[column]])) {
+    # Generating outliers list of column containing outliers 
+    outlier_list <- outlier(dem_data[[column]])  
+    
+    # If length of outliers list is greater than 0 
+    if (length(outlier_list) > 0){
+      # printing the coloumn consisting of outliers 
+      print(paste("The column", column, "has", length(outlier_list), "outliers present!"))
+      print(paste("These outliers are at:", paste(outlier_list, collapse = ", ")))
+      # Storing indices of rows with outliers
+      row_outliers <- union(row_outliers, outlier_list)
+    }
+  }
+}
+
+
+
+
+
+# Remove rows with outliers
+no_outliers_dem <- dem_data[-row_outliers, ]
+#print(no_outliers_dem)
+
+
+```
+**Inference** Based on the dementia data ,there are vey less outliers count( Visit column contain 6 Outliers, MR.Delay contain 3 outliers, MMSE contain 7 outliers and CDR  consist of 3 outliers. Outliers were removed through z score and stored in no_outliers_dem data.
+
+
+**Correlation analysis**
+Performing correlation analysis to identify highly correlated features and measure the strength and direction of relationship between the numeric variables which helps in quantification of changes in one variable associated with changes in another variable. The analysis shows positive, negative correlation between the variables. High correlations between the variable could lead to multi collinearity issues and hence the variables that are highly interrelated are removed to enhance the model performance and any redundancy.Correlation of 1 indicates a positive , high correlation, 0 indicates no correlation and -1 indicates the negative correlation.
+
+
+```{r}
+
+
+# Storing  no_outliers dem in corr_dem_data
+corr_dem_data <- no_outliers_dem
+
+# converting group column into numeric and factoring the group column 
+corr_dem_data$Group <- as.numeric(factor(corr_dem_data$Group))
+
+
+# Looking for numeric columns in dem_data
+num_dem_data <- corr_dem_data[sapply(corr_dem_data, is.numeric)]
+
+# Generating correlation matrix of numeric dem_data  using pairwise complete observations which calculate the pairs of observations that have non - missing values for the variables being correlated. In Case if any missing values are present in the different pair of observations, those pairs will still be used for correlation.
+
+correlation_matrix <- cor(num_dem_data, use = "pairwise.complete.obs")
+
+# Using melt to transform the correlation matrix to a long format or reshaping the data 
+melted_matrix <- melt(correlation_matrix)
+
+# Creating a heatmap with correlation values
+ggplot(data = melted_matrix, aes(Var1, Var2, fill = value)) +
+  # Add tiles to the plot to represent in form of heatmap
+  geom_tile() +
+  # geom_text add text labels to each tile showing the rounded correlation values (to two decimal places) on the heatmap. 
+  # The labels will be displayed in black color and with a font size of 3.
+  geom_text(aes(label = round(value, 2)), color = "black", size = 3) + 
+  # This set the color gradient for heatmap
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red",
+                       midpoint = 0, limit = c(-1, 1), space = "Lab",
+                       name = "Correlation") +
+  # This sets up a minimal theme for the plot, removing unnecessary elements like gridlines.
+  theme_minimal() +
+  # customizing the appearance of axis text by rotating the x-axis labels by 45 degrees and adjusting their size. It also sets the size of the y-axis labels.
+  theme(
+    axis.text.x = element_text(angle = 45, vjust = 1, size = 8),
+    axis.text.y = element_text(size = 8)
+  ) +
+  # Fixing the aspect ratio of plot
+  coord_fixed()
+
+
+
+```
+**Inference** There are no features which are highly correlated which shows multi collinearity. There are some positive correlation of Group with Visit, MR.Delay , EDUC, SES, MMSE, eTIV and nWBV and some negative correlation with ASF, CDR and Age.
+
+*Data cleaning and shaping*
+
+Identifying missing values in the columns of no outliers dem data and displaying the names of column consisting of missing values in the data.
+ 
+```{r}
+ 
+ 
+# Check for missing values in each column
+
+missing_values <- colSums(is.na(no_outliers_dem))
+ 
+# Display columns with missing values
+
+names_with_missing <- names(missing_values[missing_values > 0])
+
+print(names_with_missing)
+ 
+
+
+
+```
+Since SES and MMSE columns consist of missing values. Cleaning the data further to impute the missing values.
+
+Imputing  missing values in a column of SES and MMSE  with median since imputing the values with median is not influenced by extreme values or outliers in the data. It gives a good measure of central tendency, especially when the distribution of data is skewed or not normal.
+
+```{r}
+
+
+# Replace missing values in 'SES' column with median
+
+median_ses <- median(no_outliers_dem$SES[!is.na(no_outliers_dem$SES)])
+
+no_outliers_dem$SES[is.na(no_outliers_dem$SES)] <- median_ses
+
+
+ 
+# Replace missing values in 'MMSE' column with median
+
+median_mmse <- median(no_outliers_dem$MMSE[!is.na(no_outliers_dem$MMSE)])
+
+no_outliers_dem$MMSE[is.na(no_outliers_dem$MMSE)] <- median_mmse
+ 
+
+head(no_outliers_dem,4)
+
+#is.na(dem_data)
+
+
+```
+**Evaluation of distribution**
+
+Plotting histogram after removing the outliers and checking the spread of the data 
+
+```{r}
+
+
+# Histograms for Age, EDUC, eTIV, nWBV,Visit,SES,MR.Delay,CDR,ASF,MMSE
+
+par(mfrow = c(2, 2)) # Set up a grid of 2x2 plots
+
+hist(no_outliers_dem$Age, main = "Histogram of Age", xlab = "Age")
+
+hist(no_outliers_dem$Visit , main = "Histogram of Visit", xlab = "Visit")
+
+hist(no_outliers_dem$EDUC, main = "Histogram of Education", xlab = "Education")
+
+hist(no_outliers_dem$SES, main = "Histogram of SES", xlab = "SES")
+
+hist(no_outliers_dem$MR.Delay, main = "Histogram of MR.Delay", xlab = "MR.Delay")
+
+hist(no_outliers_dem$CDR, main = "Histogram of CDR", xlab = "CDR")
+
+hist(no_outliers_dem$ASF, main = "Histogram of ASF", xlab = "ASF")
+
+hist(no_outliers_dem$MMSE, main = "Histogram of MMSE", xlab = "MMSE")
+
+hist(no_outliers_dem$eTIV, main = "Histogram of eTIV", xlab = "eTIV")
+
+hist(no_outliers_dem$nWBV, main = "Histogram of nWBV", xlab = "nWBV")
+
+
+ 
+
+
+```
+
+*Inference* After looking at the plots, there are some features in the data which are still not normally distributed 
+
+
+Normalizing through Z score. Scaling the data to to make th data normally distributed. 
+
+```{r}
+
+
+
+
+# Taking numerical columns from the no outliers dementia data 
+numeric_cols <- names(no_outliers_dem)[sapply(no_outliers_dem, is.numeric)]
+
+
+# Performing z score normalization 
+scaled_data <- as.data.frame(scale(no_outliers_dem[numeric_cols]))
+
+# Displaying the scaled data 
+head(scaled_data)
+
+
+
+
+
+```
+
+Applying Shapiro wilk test to check if the columns are normally distributer after applying scaling through z score. 
+
+```{r}
+
+
+# Initializing an empty vector to store non-normally distributed columns
+
+no_normal_cols <- c()
+ 
+# Looping through each column of the dataset
+
+for (col in names(scaled_data)) {
+
+  # Checking if the column is numeric
+
+  if (is.numeric(scaled_data[[col]])) {
+
+    # Performing Shapiro-Wilk test for normality
+
+    shapiro_test <- shapiro.test(scaled_data[[col]])
+
+    # Check if the p-value is less than 0.05 (common significance level)
+
+    if (shapiro_test$p.value < 0.05) {
+
+      # If the p-value is less than 0.05 , column is not normally distributed
+
+      no_normal_cols <- c(no_normal_cols,col)
+
+      cat("Column", col, "is not normally distributed.\n")
+
+    }
+
+  }
+
+}
+ 
+
+
+
+```
+*Inference* Howeever, even after apply Shapiro-Wilk test the coloums like Visit, MR.Delay, EDUcation, SES, MMSE, CDR, eTIV, nWBV and ASF are not normally distributed 
+
+
+
+Since from the histogram , the plots are skewed, performing log transformation on the data to transform the data and checking if the data is normally distributed 
+
+```{r}
+
+
+# Taking numerical columns from no_outliers_dem
+num_Col <- names(no_outliers_dem)[sapply(no_outliers_dem, is.numeric)]
+
+# Performing log transformation on numeric columns of dementia data 
+log_transformed_data <- as.data.frame(lapply(no_outliers_dem[num_Col], log))
+
+print(log_transformed_data)
+
+
+
+```
+
+Applied shapiro wilk test on log transformed data 
+```{r}
+# Taking column names from log transformed data 
+cols <- colnames(log_transformed_data)
+#  randomly sampling rows with replacement from the log_transformed_data dataframe and creating a subset named sample_subset. sample() is used to generate random row indices based on the number of rows in the dataset (nrow(log_transformed_data)) with replacement.
+sample_subset <- log_transformed_data[sample(nrow(log_transformed_data), replace = TRUE), ]
+
+# Retrieving column names from sample subset
+sample_cols <- colnames(sample_subset)
+
+# for column in sample columns 
+for (col in sample_cols) {
+  # performing shapiro test on each column in sample subset 
+  shap <- shapiro.test(sample_subset[, col])
+  # retrieving the p value from Shapiro wilk test stored in shap
+  val <- shap$p.value
+  # Checks if the p-value is not NA (i.e., the test was valid) and if the p-value is greater than 0.05 (indicating the data follows a normal distribution). If these conditions are met, it prints a message indicating that the specific column follows a normal distribution.
+  if (!is.na(val) && val > 0.05) {
+    print(paste0("The column ", col ," follows a normal distribution"))
+  }
+}
+
+
+```
+
+**Inference** After log transformation data , the data is still not getting transformed.Trying square root transformation and again applying shapiro wilk test.
+
+
+Applying Square root transformation on the data 
+```{r}
+
+
+# Taking numerical columns from 'no_outliers_dem'
+num_Col <- names(no_outliers_dem)[sapply(no_outliers_dem, is.numeric)]
+
+# Square root transformation of numeric columns
+sqrt_transformed_data <- as.data.frame(lapply(no_outliers_dem[num_Col], sqrt))
+
+#print(sqrt_transformed_data)
+
+
+```
+
+```{r}
+
+# Taking column names from square rooot transformed data 
+cols <- colnames(sqrt_transformed_data)
+#  randomly sampling rows with replacement from the sqrt_transformed_data dataframe and creating a subset named sample_subset. sample() is used to generate random row indices based on the number of rows in the dataset (nrow(sqrt_transformed_data)) with replacement.
+sample_subset <- sqrt_transformed_data[sample(nrow(sqrt_transformed_data), replace = TRUE), ]
+
+# Retrieving column names from sample subset
+sample_cols <- colnames(sample_subset)
+
+# for column in sample columns 
+for (col in sample_cols) {
+  # performing shapiro test on each column in sample subset 
+  shap <- shapiro.test(sample_subset[, col])
+  # retrieving the p value from Shapiro wilk test stored in shap
+  val <- shap$p.value
+  # Checks if the p-value is not NA (i.e., the test was valid) and if the p-value is greater than 0.05 (indicating the data follows a normal distribution). If these conditions are met, it prints a message indicating that the specific column follows a normal distribution.
+  if (!is.na(val) && val > 0.05) {
+    print(paste0("The column ", col ," follows a normal distribution"))
+  }
+}
+
+
+
+```
+**Inference** Based on the shapiro wilk test, all columns are not noramlly distributed.Hence moving forward with removing outliers from the data only. Since I am using Naive Baye's , random forest and support vector machines which are non parametric method and don't require data to be normally distributed.These non parametric methods are often more flexible and can model complex relationships without making strong assumptions about the data distribution. 
+
+
+
+To understand the feature importance, looking at different plots to check which features are associated with predicting dementia.
+
+*Plotting a violin plot to check Distribution of Age and gender by CDR rate*
+
+Each violin represent the distribution of Age across different categories of CDR rate(Clinical dementia rating).The width of the violin at different points indicates the density of the data, so wider sections represent a higher density of cases (more people of that age). To differentiate between the gender male and female used different colors.At x axis is the CDR rate with different CDR rates 0,0.5 and 1  to categorize severity of symptoms. Higher scores indicate severe cognitive impairment.
+```{r}
+
+# Loading library ggplot2
+library(ggplot2)
+
+
+# Filtering CDR values from dataset to keep it as 0,0.5 and 1 
+dem_data_fill <- no_outliers_dem[no_outliers_dem$CDR %in% c(0, 0.5, 1), ]
+
+# Generating a violin plot through ggplot to visualize the distribution of Age and Gender by CDR rate 
+ggplot(dem_data_fill, aes(x = factor(CDR), y = Age, fill = M.F)) +
+  geom_violin(scale = "width", alpha = 0.8) +
+  # setting labels x and y , setting up the title 
+  labs(x = "CDR Rate", y = "Age", title = "Distribution of Age and Gender by CDR Rate") +
+    scale_x_discrete(labels = c("0" = "0", "0.5" = "0.5", "1" = "1")) + 
+  # setting colors for female and male gender
+ scale_fill_brewer(palette = "Set1") +  
+  theme_minimal()
+
+
+
+
+
+```
+**Inference** Based on the violin plot , at a CDR rate of 0 (no cognitive impairement), the age distribution is somewhat similar in case of males and females with a little wider distribution  for females. At the CDR rate of 0.5 (mild cognitive impairement), the plot is similar but the plot is wider for females at older age range (80-90) suggesting a larger density of females in the old category. At the CDR rate of 1 ( moderate cognitive impairment), the distribution of age for males and females differs more noticeably. The plot for females is wider in the middle, suggesting that the age distribution of females with a CDR of 1 is more concentrated around the median age, whereas the distribution for males is more even across the age range. Overall there may be a difference in the age distribution of cognitive impairment severity between genders. 
+
+
+*Plotting a strip plot to look at the distribution of MMSE with Group *
+
+The strip plot is a form of scatter plot designed to visualize the distribution of a continuous variable within categories. On the x axis, there are 3 categories demented, non demented and Converted. Each represents the individual classified on the basis of cognitive stus. Each dot on the plot represents an individual observation, with the position along the y-axis indicating the MMSE value for that observation. The points are 'striped' or 'jittered' horizontally  to avoid overlap so that the density of points can be visually assessed.The colors are used to differentiate the groups: 'Converted' is in pink, 'Demented' in green, and 'Nondemented' in blue.
+
+```{r}
+
+# Storing no_outliers_dem into a new variable new_dem_data
+new_dem_data <- no_outliers_dem
+# Convert Group column to a numeric factor
+new_dem_data$Group <- as.numeric(factor(new_dem_data$Group))
+
+# Load necessary libraries
+library(ggplot2)
+
+# Creating a strip plot to visualize the distribution of MMSE with Group
+ggplot(new_dem_data, aes(x = factor(Group), y = MMSE, color = factor(Group))) +
+  geom_jitter(width = 0.2, alpha = 0.7) +
+  labs(x = "Group", y = "MMSE (Mini-Mental State Examination)",
+       title = "Distribution of MMSE with Group") +
+  scale_x_discrete(labels = c("1" = "Converted", "2" = "Demented", "3" = "Nondemented")) +
+  theme_minimal()
+
+
+
+```
+**Inference** From the above strip plot shows that MMSE is less populated in converted indicating that there are very less individuals who are in 
+converted group while in case of demnentia MMSE (Mini mental state exaimnation results are widely spread) indicating that MMSE results are associated with dementia. In case of Non demented the MMMSE results are very sparsely populated.
+
+**Plotting a strip plot to look at the distribution of eTIV( estimated total intracranial volume) with Group** 
+This plot represents the estimated total intracranial volume on Y azis , which is a quantitative measure, presumably of the brain or skull volume. The values are plotted on the vertical axis and range from about 1250 to just under 2000 cubic units (units in cubic millimeters). On the x asis is the  'Demented', and 'Nondemented' and 'Converted' group.These groups are probably defined by their cognitive status, with 'Converted' possibly referring to individuals who have transitioned from one status to another over time (e.g., from nondemented to demented or vice versa).
+Each dot represents an individual data point, showing the eTIV for one individual in the study.The colors are used to differentiate the groups: 'Converted' is in pink, 'Demented' in green, and 'Nondemented' in blue.
+
+```{r}      
+
+
+
+
+# Creating a strip plot to visualize the distribution of eTIV with Group
+ggplot(new_dem_data, aes(x = factor(Group), y = eTIV, color = factor(Group))) +
+  # Plotting a strip plot through  geom_jitter
+  geom_jitter(width = 0.2, alpha = 0.7) +  
+  labs(x = "Group", y = "eTIV (Estimated Total Intracranial Volume mm3)",
+       title = "Distribution of estimated total intracranial volume with Group ") +
+  # Setting specific x-axis labels
+  scale_x_discrete(labels = c("1" = "Converted", "2" = "Demented", "3" = "Nondemented")) +  
+  theme_minimal()
+
+
+
+
+
+
+```
+**Inference** The 'Nondemented' group has a wide range of eTIV values but is generally centered around the mid-range of the axis.
+The 'demented' group has a broad distribution as well, with many points concentrated at higher eTIV values compared to the 'Nondemented' group.
+The 'Converted' group has fewer data points than the other two groups, which makes it more challenging to draw strong conclusions about its distribution.This indicate that difference in the brain volume is associated with the dementia status. 
+
+
+**Plotting a strip plot to look at the distribution of ASF( Atlas scaling factor with Group)**
+On the Y axis represnts the Atlas scaling factor likely showing some form of size or volume scaling based on an atlas reference in a medical or biological context. The values range from 1.0 upwards, and individual points represent individual measurements or observations. On the axis are the 3 categories classifies as Converted, Demented and Nondemented which are classified on the basis of cognitive status.Each dot on the plot represents an individual observation, with the position along the y-axis indicating the ASF value for that observation. The fact that the points are 'striped' or 'jittered' horizontally is to avoid overlap so that the density of points can be visually assessed.The colors are used to differentiate the groups: 'Converted' is in pink, 'Demented' in green, and 'Nondemented' in blue.
+
+```{r}
+
+# Loading Library ggplot2
+library(ggplot2)
+
+
+# Creating a strip plot to visualize the distribution of ASF with Group
+ggplot(new_dem_data, aes(x = factor(Group), y = ASF, color = factor(Group))) +
+   # Plotting a strip plot through  geom_jitter
+  geom_jitter(width = 0.2, alpha = 0.7) +  
+  labs(x = "Group ", y = "ASF (Atlas scaling factor)",
+       title = "Distribution of Atlas scaling factor with Group") +
+  scale_x_discrete(labels = c("1" = "Converted", "2" = "Demented", "3" = "Nondemented")) +  # Set specific x-axis labels
+  theme_minimal()
+
+
+
+```
+
+**Inference** The distribution of ASF values for each group can be visually compared. For example, it seems that the Nondemented group has a higher concentration of points with lower ASF values compared to the 'Demented' group.There is variability within each group, as indicated by the spread of the points along the y-axis.The 'Converted' group has fewer observations compared to the 'Demented' and 'Nondemented' groups, which is evident from the fewer number of dots.It does not appear that there is a clear, distinct separation between the ASF values when comparing the 'Demented' and 'Nondemented' groups, suggesting overlap in the ASF values across these groups. Since, Atlas scaling factor and estimated total intracranial volume have collinearity. Moreover, estimated total intracranial volume has a correlation with Clinical dementia rating. To avoid multi collinearity removing ASF feature from no_outliers_dem datas since it is linear dependent with intracranial volume.
+
+# Identification of PCA(Principal component analysis)
+
+Principal Component Analysis (PCA) provides information about the importance of each principal component (PC) in the dataset.The standard deviation component indicates the spread of the data. Higher the standard deviations higher the spread of the data. Proportion of Variance tells the variation captured by each principal component.Cumulative proportion of variance  explains the total variance in dataset captured by each component in sequence. The handedness is right which make it insignificant to select the feature, to avoid multi collinearity removing ASF feature, not selecting subject ids and mri id's for the data. Selecting features like "Group", "Visit", "MR.Delay", "M.F", "Age", "EDUC","SES","MMSE", "CDR","eTIV", "nWBV and looking at the principal component analysis.
+
+
+
+
+```{r}
+# storing no_outliers_dem into new variable pca_dem_data
+pca_dem_data <- no_outliers_dem
+
+# converting group column into numeric and factoring the group column 
+#ca_dem_data$Group <- factor(pca_dem_data$Group, levels = c("Nondemented", "Demented", "Converted"), labels = c(0,1,2))
+
+pca_dem_data$Group <- as.numeric(factor(pca_dem_data$Group))
+
+pca_dem_data$M.F <- (as.numeric(factor(pca_dem_data$M.F)))
+
+
+
+# Select specific columns from the data
+selecting_pca_dem_data <- pca_dem_data[,c("Group", "Visit", "MR.Delay", "M.F", "Age", "EDUC","SES","MMSE", "CDR","eTIV", "nWBV")]
+
+
+# Taking numeric columns from the data.Applying is.numeric() function to each column of pca_dem_data and returns a logical vector indicating whether each column is numeric or not.
+dem_data_numeric <- selecting_pca_dem_data[, sapply(selecting_pca_dem_data, is.numeric)]
+
+# Perform PCA using the prcomp() function on the subset dem_data_numeric.scale. = TRUE standardizes the variables (centers and scales) before PCA by subtracting means and dividing by standard deviations.
+pca_analysis <- prcomp(dem_data_numeric, scale. = TRUE)
+
+#Generating summary of pca results 
+summary(pca_analysis)
+
+
+```
+**Inference** Based on the summary of PCA analysis, we can identify the components which are important to keep.PC1 explains 23.02% of the variance.
+PC2 explains an additional 20.41% for a cumulative total of 43.42%.PC3 adds 16%If the cumulative proportion reaches a satisfactory threshold (e.g., 70-90%) with fewer components , those features can be considered. PC1 to PC5 explains large proportion of total variance. However, other components from PC6 to PC11 might contribute to dataset information.
+
+```{r}
+
+# Sample data of proportion of variance explained by each principal component
+variance_explained <- c(0.2302, 0.2041, 0.1661, 0.1151, 0.1071, 0.05907, 0.03587, 0.0285, 0.0256, 0.02146, 0.00695)
+
+# Creating a data frame for plotting
+df <- data.frame(
+  PC = paste0("PC", 1:length(variance_explained)),
+  VarianceExplained = variance_explained
+)
+
+
+# Reordering the levels of the PC factor in the data frame
+df$PC <- factor(df$PC, levels = paste0("PC", 1:length(variance_explained)))
+
+# Plotting a bar chart
+library(ggplot2)
+
+ggplot(df, aes(x = PC, y = VarianceExplained)) +
+  geom_bar(stat = "identity", fill = "skyblue", alpha = 0.7) +
+  labs(title = "Proportion of Variance Explained by Principal Components",
+       x = "Principal Component", y = "Proportion of Variance") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotating x-axis labels for better readability
+
+
+
+```
+**Inference** Plotted proportion of variance bar plot of prinicipal components which illustrates the amount of variance each principal component captures from the total variance in the dataset. In PCA, principal components are created to summarize the variation present in the original variables. These components are ordered by the amount of variance. The proportion of variance plot shows how much variance in the data is explained by each principal component. It helps in understanding the relative importance of each component in retaining information from the original dataset.
+
+
+```{r}
+
+
+# Performing pca on the dem_data numeric data 
+pca_analysis <- prcomp(dem_data_numeric, scale. = TRUE)
+
+#  standard deviations of each principal component is calculated by the proportion of variance explained by each principal component. It squares the standard deviations, divides each squared value by the sum of all squared standard deviations, and returns the result as a vector.
+pca_analysis$sdev^2 /sum(pca_analysis$sdev^2)
+
+# Extract eigenvalues, loadings (eigenvectors), and principal components
+# reverse the signs as eigenvectors in R point in the negative direction by default
+pca_analysis$rotation <- -1 * pca_analysis$rotation  
+
+
+# 
+pca_analysis$rotation
+
+```
+**Inference**  Extracting the eigen values of each prinicpal component included and  printing the list of each attributes that explain the most variance. The loading matrix obtained from PCA(principal component analysis) represents the relationship between the original variables and each prinicpal components. The numbers in each column represent the contribution (loadings) of each original variable to that particular principal component. The magnitude and sign of these values indicate the strength and direction of the relationship between the original variables and the principal components.For egample MMSE, CDR , nWBV and Group have relatively high absolute loadings in PC1, PC2 has positive loadings primarily related to 'Visit', 'MR.Delay', 'M.F', 'EDUC', 'Age', and 'eTIV'. This suggests these variables are positively associated in this component while 'CDR' has a moderate negative loading. Each component is a mix of positive and negative loadings and the features are somewhat indirectly linked.
+Selecting "Group", "Visit", "MR.Delay", "M.F", "Age", "EDUC","SES","MMSE", "CDR","eTIV", "nWBV" for my further analysis since various research studies have indicated that these features are indirectly linked to dementia. 
+
+
+Factoring categorical variables 
+
+```{r}
+
+# Factoring the group  categorical variable nondemented , demented and converted
+no_outliers_dem$Group <- as.factor(no_outliers_dem$Group)
+# Factoring Gender M.F categorical variables 
+no_outliers_dem$M.F <- as.factor(no_outliers_dem$M.F)
+
+
+# Storing no_outliers_dem in factored data
+factored_data <- no_outliers_dem
+
+
+
+```
+
+
+```{r}
+
+
+# Select specific columns from the data
+
+select_data <- factored_data[, c("Group","Visit","MR.Delay","M.F","Age","EDUC","SES","MMSE","CDR","eTIV","nWBV")]
+ 
+#print(select_data)
+
+
+
+```
+
+
+
+# Splitting data into training and validation 
+Splitting data into training and test data (validation data) to  evaluate the model performance. The training set is used to train the model, and the validation set estimate how well model might perform on new unseen data. Splitting the data into 70 :30 ratio where 70% is the training set and 30% is the validation set. Printing the number of rows of training and test data after splitting the data 
+
+```{r}
+
+# Calculating the total rows
+
+total_rows <- nrow(select_data)
+
+set.seed(123)
+ 
+ 
+# Taking training ratio 70 % 
+
+training_ratio = 0.70
+
+training_set <- round(training_ratio*total_rows)
+ 
+# Create a random permutation of row indices
+
+# sample is used to select random instances of rows with replacement 
+
+indices <- sample(1:total_rows)
+ 
+# Splitting into training and test data 
+
+training_data <- select_data[indices[1:training_set],]
+
+test_data <- select_data[indices[(training_set + 1):total_rows], ]
+ 
+# Print the number of rows in each set of training and validation data 
+
+cat("Training data:", nrow(training_data), "\n")
+
+cat("Test data:", nrow(test_data), "\n")
+ 
+print(training_data)
+
+#print(test_data)
+ 
+
+
+
+```
+
+
+
+# Model Selection 
+For predicting the dementia, I selected Naive Baye's model, random forest and support vector machines machine learning algorithm to predict the target variable group demented, non demented and  converted subject patients. 
+
+# Creation of Naive Baye's model 
+The model is useful for calculating probabilities of instances belonging to a particular class. The model finds the independence between features, which means it assumes that the presence of a particular feature in a class is unrelated to the presence of other features.
+
+
+```{r, warning =FALSE}
+
+# Since we have to use the Naive Bayes Classification from the KlaR library, we will have to first load the library
+#install.packages("klaR")
+library(klaR)
+ 
+# Removing Group column from the training data and storing the variable in train_features
+train_features <- training_data[, -which(names(training_data) == "Group")]
+ 
+# storing the target variable iin train_target
+train_target <- training_data$Group
+ 
+# Removing Group column from the test data and storing the variables in test_features
+test_features <- test_data[, -which(names(test_data) == "Group")]
+ 
+ 
+# Train the Naive Bayes model
+m <- NaiveBayes(train_features, train_target)
+ 
+# Make predictions on the validation set
+predictions <- predict(m, test_features)
+
+
+
+```
+
+# Evaluation of fit of models with hold out method (Naive Baye's model) 
+
+The "holdout method" refers to a simple technique in machine learning and model evaluation where the available dataset is split into two subsets: a training set and a test set. The holdout method involves withholding a portion of the dataset (the test set) during the model training phase to evaluate the model's performance on unseen data. Training set is used to train the machine learning model. It comprises a significant portion of the dataset, allowing the model to learn patterns, relationships. The withheld subset is used to assess the trained model's performance. It acts as a proxy for real-world, unseen data. 
+
+
+```{r}
+
+
+multi_class_labels <- predictions$class
+ 
+# Create a confusion matrix
+
+confusion_matrix_nb <- table(Predicted = multi_class_labels, Actual = test_data$Group)
+
+
+# Generating cross table
+
+crosstab <- CrossTable(multi_class_labels, test_data$Group,
+
+  prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+
+dnn = c('predicted', 'actual'))
+ 
+ 
+# Calculate accuracy
+
+accuracy_nb <- sum(diag(confusion_matrix_nb)) / sum(confusion_matrix_nb)
+
+    
+ 
+# Calculate precision
+
+precision_nb <- diag(confusion_matrix_nb)/ rowSums(confusion_matrix_nb)
+
+# Calculate overall precision (macro-averaging)
+overall_precision_nb <- mean(precision_nb, na.rm = TRUE)
+
+
+
+# Calculate recall for random forest 
+recall_nb <- diag(confusion_matrix_nb) / colSums(confusion_matrix_nb)
+
+# Calculate recall for random_forest 
+overall_recall_nb <- mean(recall_nb, na.rm = TRUE)
+
+ 
+# Print the accuracy in percent
+
+cat("Accuracy:", round(accuracy_nb * 100, 2), "%\n")
+
+cat("Precision of Naive Bayes model:", round(overall_precision_nb * 100, 2),"%\n")
+
+cat("Recall of Naive Bayes model:", round(overall_recall_nb * 100, 2),"%\n")
+
+# F1 score (Harmonic mean of precision and recall) for Naive Baye's alogorithm 
+
+f1_score_nb <- 2 * (overall_precision_nb * overall_recall_nb) / (overall_precision_nb + overall_recall_nb)
+
+cat("F1score for Naive Bayes model:", round(f1_score_nb * 100, 2), "%\n")
+
+
+
+
+
+```
+**Inference** Based on the crosstable of Naive Baye's model , the table cell represent the  count of instances classified into different categories by the model and the actual classes these instances belong to. Total observations in the table used for evaluation = 109 . 
+True Positives - The instances which were correctly classified as a specified class. 1 instance correctly predicted as Converted. In case of demented 43 instances were correctly predicted as demented. In case of Non demented 53 instances were correctly predicted.
+True negatives -  In  the 'Converted' row, cells (Demented, Converted) and (Nondemented, Converted) contain values 3 and 1, respectively. These represent instances not 'Converted' and correctly predicted as 'Demented' or 'Nondemented' called as True negatives. 
+False positive - Instances incorrectly predicted as a specific class when they belong to a different class.For example, in the 'Converted' row, cells (Demented, Converted) = 2 and (Nondemented, Converted) = 5 represent instances incorrectly predicted as 'Converted' when they were actually 'Demented' or 'Nondemented'.
+False negatives - Instances incorrectly predicted as a different class when they belong to the class under consideration.
+In the 'Demented' row, the cell (Converted, Demented) = 2 and in the 'Nondemented' row, the cell (Converted, Nondemented) = 5 represent instances incorrectly predicted as 'Demented' or 'Nondemented' when they were actually 'Converted
+Above are the overall accuracy, precision, recall and F1 score of Naive Baye's model 
+
+# Creation of Random Forest model and Evaluate fit of models with hold out method (Random forest model) 
+
+During training, a large number of decision trees are built using the random forest ensemble learning method.The resulting class is the mean prediction (regression) or mode of the classes (classification) of each individual tree.By aggregating predictions from multiple trees, Random Forest tends to produce more reliable and stable predictions than a single decision tree. Based on the node impurity , it calculates the importance of each feature in predicting target variable .This is calculated based on the decrease in node impurity across all trees whenever a specific feature is used for splitting.
+
+
+
+```{r}
+
+set.seed(123)
+
+
+#  This function creates a random forest model.Target variable and predictor variables are used to predict the group from the training_data
+# setting maximum depth each tree in the forest to 3 , limiting the tree's complexity and using mincriterion as 0.01 which is minimum criteria for splitting the nodes in the trees. 
+random_forest <- randomForest(Group ~ Visit+MR.Delay+M.F+Age+EDUC+SES+MMSE+CDR+eTIV+nWBV, data = training_data, controls = ctree_control(maxdepth = 3, mincriterion = 0.01))
+
+
+# Extracting most important variables
+importance <- importance(random_forest)
+print(importance)
+
+
+#cat("Most Important Variables: ", names(importance), "\n")
+
+# Calculating predictions of 
+random_forest_prediction <- predict(random_forest, newdata = test_data)
+
+# actual labels
+actual_values <- test_data$Group
+
+
+# Create a confusion matrix
+confusion_matrix_random_forest <- table(Predicted = random_forest_prediction, Actual = test_data$Group)
+
+# Creating a crosstable
+crosstab <- CrossTable(random_forest_prediction, test_data$Group,
+
+  prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+
+dnn = c('predicted', 'actual'))
+
+
+# Calculating accuracy
+accuracy_random_forest <- sum(diag(confusion_matrix_random_forest)) / sum(confusion_matrix_random_forest)
+
+
+# Calculating precision for random forest
+
+precision_random_forest <- diag(confusion_matrix_random_forest)/ rowSums(confusion_matrix_random_forest)
+
+# Calculate overall precision (macro-averaging)
+overall_precision_random_forest <- mean(precision_random_forest, na.rm = TRUE)
+
+
+
+# Calculate recall for random forest 
+recall_random_forest <- diag(confusion_matrix_random_forest) / colSums(confusion_matrix_random_forest)
+overall_recall_random_forest <- mean(recall_random_forest, na.rm = TRUE)
+
+
+
+
+# Print the accuracy ,precision and recall
+cat("Overall Accuracy:", round(accuracy_random_forest * 100, 2), "%\n")
+cat("Precision of Random Forest :", round(overall_precision_random_forest * 100, 2), "%\n")
+cat("Recall of Random Forest :", round(overall_recall_random_forest * 100, 2), "%\n")
+
+# F1 score for Random Forest
+f1_score_random_forest <- 2 * (overall_precision_random_forest * overall_recall_random_forest) / (overall_precision_random_forest + overall_recall_random_forest)
+cat("F1 score for Random forest model:", round(f1_score_random_forest * 100, 2), "%\n")
+
+
+
+
+```
+**Inference**
+Based on the results, "MeanDecreaseGini" is the feature importance scores calculated using Gini impurity measure within a decision tree model.  These scores reflect the importance of each feature in predicting the target variable within the context of the specific model used. 
+Higher values of feature suggest that feature is more important for making decisions in the model. Features like CDR, MMSE ,eTIV and nWBV are important features in predicting Group while Visit, MR.Delay, M.F, Age, EDUC and SES have low importance scores indicating having less influence on predicting the target variable
+Based on the crosstable of random_forest model , the table cell represent the  count of instances classified into different categories by the model and the actual classes these instances belong to. Total observations in the table used for evaluation = 109 . 
+True Positives - The instances which were correctly classified as a specified class. 1 instance correctly predicted as Converted. In case of demented 45  instances were correctly predicted as demented. In case of Non demented 53 instances were correctly predicted.
+True negatives -  True Negative (TN): The number of observations correctly predicted as negative for a specific class. 
+False positive - Instances incorrectly predicted as a specific class when they belong to a different class.
+False negative - The number of observations incorrectly predicted as negative for a specific class (when it was actually positive). 
+Above are the Overall accuracy, precision, recall and F1 score for random forest.
+
+
+
+# Creation of Random Forest model and Evaluate fit of models with hold out method (Support Vector Machines model)
+Support vector machines find the optimal hyperplane that best separates the data points of different classes while maximizing the margin, which is the distance between the hyperplane and the closest data points (support vectors) of each class.SVMs can handle linear and non-linear classification by using the kernel. These kernels transform the input data into higher-dimensional spaces, making it possible to find a hyperplane that can separate non-linearly separable data.
+
+```{r}
+
+
+# # Train a Support Vector Machine (SVM) model using a linear kernel
+svm_model <- svm(Group ~ ., data = training_data, kernel = "linear")
+
+# Make predictions on the test_data using the trained SVM model
+svm_predictions <- predict(svm_model, newdata = test_data)
+
+# Create a confusion matrix
+confusion_matrix_svm <- table(Predicted = svm_predictions, Actual = test_data$Group)
+
+
+# Creating a crosstable
+crosstab <- CrossTable(svm_predictions, test_data$Group,
+
+  prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+
+dnn = c('predicted', 'actual'))
+
+
+ 
+# Calculate overall accuracy
+accuracy_svm <- sum(diag(confusion_matrix_svm)) / sum(confusion_matrix_svm)
+
+
+# Calculating precision for Support Vector machines
+
+precision_svm <- diag(confusion_matrix_svm)/ rowSums(confusion_matrix_svm)
+
+# Calculate overall precision (macro-averaging)
+overall_precision_svm <- mean(precision_svm, na.rm = TRUE)
+
+
+
+# Calculate recall for Support Vector machines 
+recall_svm <- diag(confusion_matrix_svm) / colSums(confusion_matrix_svm)
+# Calculate overall recall (macro-averaging)
+overall_recall_svm <- mean(recall_svm, na.rm = TRUE)
+
+
+# Print the accuracy and precision
+cat("Overall Accuracy:", round(accuracy_svm * 100, 2), "%\n")
+cat("Precision Support vector machine:", round(overall_precision_svm * 100, 2), "%\n")
+cat("Recall of Support Vector machine :", round(overall_recall_svm * 100, 2), "%\n")
+
+# F1 score for Support Vector machine 
+f1_score_svm <- 2 * (overall_precision_svm * overall_recall_svm) / (overall_precision_svm + overall_recall_svm)
+cat("F1 score for support vector machines :", round(f1_score_svm * 100, 2), "%\n")
+
+ 
+
+
+```
+**Inference**
+Based on the results of support vector machines,the crosstable represents , the table cell represent the  count of instances classified into different categories by the model and the actual classes these instances belong to. Total observations in the table used for evaluation = 109 . 
+True Positives - The instances which were correctly classified as a specified class. 1 instance correctly predicted as Converted. In case of demented 44  instances were correctly predicted as demented. In case of Non demented 54  instances were correctly predicted.
+True negatives -  True Negative (TN): The number of observations correctly predicted as negative for a specific class. 
+False positive - Instances incorrectly predicted as a specific class when they belong to a different class.
+False negative - The number of observations incorrectly predicted as negative for a specific class (when it was actually positive). 
+Above are the Overall accuracy, precision, recall and F1 score for random forest.
+
+
+# Evaluation with k-fold cross-validation
+
+K-fold Cross-Validation
+This cross-validation technique divides the data into K subsets(folds) of almost equal size. Out of these K folds. It is a resampling technique used in machine learning for model evaluation. It involves splitting the dataset into K equally-sized folds or partitions. K denotes the number of subsets into which the dataset is divided.
+
+**K fold cross validation for Random Forest**
+
+```{r}
+
+
+
+# Define the training control for k-fold cross-validation
+train_control <- trainControl(method = "cv", number = 10)  # 10-fold cross-validation
+
+# Training the Random Forest model with k-fold cross-validation
+random_forest_cv <- train(
+  x = train_features,
+  y = training_data$Group,
+  method = "rf",
+  trControl = train_control
+)
+
+# Display the cross-validated results
+print(random_forest_cv) 
+
+
+
+# Calculating predictions of random_forest holdout model
+random_forest_pred_cv <- predict(random_forest_cv, newdata = test_data)
+
+# actual labels
+actual_values <- test_data$Group
+# Create a confusion matrix
+cm_random_forest <- confusionMatrix(random_forest_pred_cv, actual_values)
+
+# Confusion matrix table
+cmtable_random_forest <- cm_random_forest$table
+
+
+# Creating a crosstable
+crosstab <- CrossTable(random_forest_pred_cv, test_data$Group,
+
+  prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+
+dnn = c('predicted', 'actual'))
+
+
+# Calculating accuracy
+accuracy_random_forest_cv <- mean(random_forest_pred_cv == actual_values)
+
+
+# Calculating precision for random forest
+precision_random_forest_cv <- diag(cmtable_random_forest)/ rowSums(cmtable_random_forest)
+
+# Calculating the precision of random forest cross validation
+overall_precsion_random_forest_cv <- mean(precision_random_forest_cv, na.rm = TRUE)
+
+
+
+# Calculate recall for random forest
+recall_random_forest_cv <- diag(cmtable_random_forest) / colSums(cmtable_random_forest)
+# Calculating the recall of random forest cross validation
+overall_recall_random_forest_cv <- mean(recall_random_forest_cv, na.rm = TRUE)
+
+
+
+
+# Print the accuracy and precision
+cat("Overall Accuracy:", round(accuracy_random_forest_cv * 100, 2), "%\n")
+cat("Precision :", round(overall_precsion_random_forest_cv * 100, 2), "%\n")
+cat("Recall :", round(overall_recall_random_forest_cv * 100, 2), "%\n")
+
+# F1 score for Random_forest cross validation 
+f1_score_random_forest_cv <- 2 * (overall_precsion_random_forest_cv * overall_recall_random_forest_cv) / (overall_precsion_random_forest_cv + overall_recall_random_forest_cv)
+cat("F1 score for Random forest model cross validated:", round(f1_score_random_forest_cv * 100, 2), "%\n")
+
+
+
+```
+**Inference** The  output represents the performance metrics of Random Forest model trained on a dataset with 254 samples and 10 predictors, classifying classes into Connverted, demented and non demented. Through 10 fold cross validation , the model evaluation was performed.
+mtry refers to different values of mtry and their corresponding accuracy and kappa values which are metrics to assess the model performance.
+Accuracy is a measure of the overall correctness of the model in predicting the classes. It indicates the proportion of correctly predicted instances out of the total instances.Kappa (Cohen's Kappa) measures the agreement between predicted and observed classes, accounting for the possibility of predictions occurring by chance.From the results: different values of mtry were tested(2,6,10) and the model performance were measured using accuracy , improved as mtry increased from 2 to 10. The final selected model for deployment used mtry = 10 as it resulted in the highest accuracy (0.9138077), indicating that among the tested mtry values, 10 was optimal for this model in terms of accuracy.
+Overall accuracy, precision , recall and F1 Score of the model was calculated. 
+
+**K fold cross validation on Naive Baye's model**
+
+```{r, warning=FALSE}
+
+
+# Set up k-fold cross-validation
+train_control <- trainControl(method = "cv", number = 10)
+
+# Train the Naive Bayes model using k-fold cross-validation
+nb_model <- train(Group ~ ., 
+                  data = training_data, 
+                  method = "nb",  # Using 'nb' method for Naive Bayes from klaR
+                  trControl = train_control)
+
+# Print model details and performance metrics
+print(nb_model)
+
+# Make predictions on the test data using the trained Naive Bayes model
+nb_predictions <- predict(nb_model, newdata = test_data)
+
+# Create a confusion matrix
+confusion_matrix_nb <- table(Predicted = nb_predictions, Actual = test_data$Group)
+
+# Create a cross-table
+crosstab_nb_cross_valid <- CrossTable(nb_predictions, test_data$Group,
+                                      prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+                                      dnn = c('predicted', 'actual'))
+
+
+
+# Calculating accuracy for naive bayes cross validation 
+accuracy_nb_cv <- mean(nb_predictions == test_data$Group)
+
+
+# Calculating precision for naive bayes cross validation
+precision_nb_cv <- diag(confusion_matrix_nb)/ rowSums(confusion_matrix_nb)
+
+# Calculating precision of naive bayes cross validated 
+overall_precision_nb_cv <- mean(precision_nb_cv, na.rm = TRUE)
+
+
+
+# Calculate recall for naive bayes cross validation 
+recall_nb_cv <- diag(confusion_matrix_nb) / colSums(confusion_matrix_nb)
+
+# Calculating overall recall through macroaveraging naive bayes cross validated
+overall_recall_nb_cv <- mean(recall_nb_cv, na.rm = TRUE)
+
+
+
+# Print the accuracy and precision for naive bayes cross validation 
+cat("Overall Accuracy:", round(accuracy_nb_cv * 100, 2), "%\n")
+cat("Precision of Naive Bayes cross validation:", round(overall_precision_nb_cv * 100, 2), "%\n")
+cat("Recall of Naive Bayes cross validation  :", round(overall_recall_nb_cv * 100, 2), "%\n")
+
+# F1 score for Decision tree
+f1_score_nb_cv <- 2 * (overall_precision_nb_cv * overall_recall_nb_cv) / (overall_precision_nb_cv + overall_recall_nb_cv)
+cat("F1 score for Naive Bayes model crossvalidated :", round(f1_score_nb_cv * 100, 2), "%\n")
+
+
+
+```
+**Inference** This output is related to the tuning of parameters for a Naive Bayes classifier using cross-validated resampling. Here's the breakdown of the information There were 254 samples in the dataset with 10 predictor variables with 3 class groups converted, demented and non demented. 10-fold cross-validation was used for evaluating the model's performance. Use kernel parameter was typically used for non-linear classification when true and linear model was used in case of false kernel.
+usekernel = FALSE achieved higher accuracy (90.4%) and kappa (82.9%).
+usekernel = TRUE resulted in lower accuracy (87.1%) and kappa (76.3%).Optimal Model Selection: Based on the accuracy metric, the final model was selected with usekernel = FALSE as it yielded the highest accuracy compared to using the kernel (usekernel = TRUE). Therefore, the final model did not use a kernel and likely utilized a linear model or the basic Naive Bayes classifier without a kernel function for better performance based on the dataset and evaluation method. 
+Accuracy is a measure of the overall correctness of the model in predicting the classes. It indicates the proportion of correctly predicted instances out of the total instances.Kappa (Cohen's Kappa) measures the agreement between predicted and observed classes, accounting for the possibility of predictions occurring by chance.Overall accuracy, precision , recall and F1 Score of the model was calculated for naive bayes cross validation model.
+
+**K fold cross validation on Support vector machines**
+
+```{r}
+
+
+
+# Set up k-fold cross-validation
+train_control <- trainControl(method = "cv", number = 10)
+
+# Train the Naive Bayes model using k-fold cross-validation
+svm_model_crossvalid <- train(Group ~ ., 
+                  data = training_data, 
+                  method = "svmLinear",  # Using svmLinear for Linear Kernel
+                  trControl = train_control)
+
+# Print model details and performance metrics
+print(svm_model_crossvalid)
+
+# Make predictions on the test data using the trained SVM model
+svm_model_crossvalid_predictions <- predict(svm_model_crossvalid, newdata = test_data)
+
+# Create a confusion matrix
+svm_model_confusion_matrix <- table(Predicted = svm_model_crossvalid_predictions, Actual = test_data$Group)
+
+# Create a cross-table
+crosstab_svm_model_crossvalid <- CrossTable(svm_model_crossvalid_predictions, test_data$Group,
+                                      prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+                                      dnn = c('predicted', 'actual'))
+
+
+# Calculating accuracy 
+accuracy_svm_cv <- mean(svm_model_crossvalid_predictions == test_data$Group)
+
+
+
+
+# Calculating precision 
+precision_svm_cv <- diag(svm_model_confusion_matrix)/ rowSums(svm_model_confusion_matrix)
+# Calculating overall precision 
+overall_precision_svm_cv <- mean(precision_svm_cv, na.rm = TRUE)
+
+
+
+# Calculate recall 
+recall_svm_cv <- diag(svm_model_confusion_matrix) / colSums(svm_model_confusion_matrix)
+# Calculating overall recall 
+overall_recall_svm_cv <- mean(recall_svm_cv, na.rm = TRUE)
+
+
+
+# Print the accuracy and precision for support vector machine cross validated
+cat("Overall Accuracy:", round(accuracy_svm_cv * 100, 2), "%\n")
+cat("Precision :", round(overall_precision_svm_cv * 100, 2), "%\n")
+cat("Recall  :", round(overall_recall_svm_cv * 100, 2), "%\n")
+
+# F1 score for support vector machine cross validated
+f1_score_svm_cv <- 2 * (overall_precision_svm_cv * overall_recall_svm_cv) / (overall_precision_svm_cv + overall_recall_svm_cv)
+cat("F1 score for Support vector machine crossvalidated (Converted, Demented and Nondemented are as follows):", round(f1_score_svm_cv * 100, 2), "%\n")
+
+```
+**Inference** using a linear model with cross-validated resampling. The tuning parameter C is a regularization parameter that controls the trade-off between maximizing the origin(separating hyperplane) and minimizing the classification error. The constant value of 1 means that the model didn't undergo tuning across different values of C. Accuracy of SVM model with a linear kernel was observed to be approximately 90.06% . The kappa 
+statistic, which measures the agreement between predicted and observed classes while considering the possibility of a random agreement, was around 83.0%.linear kernel performed reasonably well with good accuracy and agreement between predicted and observed classes. Accuracy is a measure of the overall correctness of the model in predicting the classes. It indicates the proportion of correctly predicted instances out of the total instances.Kappa (Cohen's Kappa) measures the agreement between predicted and observed classes, accounting for the possibility of predictions occurring by chance.Overall accuracy, precision , recall and F1 Score of the model was calculated for naive bayes cross validation model.
+
+
+
+#Comparision of precision , recall and non demented  in hold out method 
+
+To compare which models worked well in Hold out method , overall accuracy , precision , recall and F1 scores were compared of the respective models. 
+
+```{r}
+
+
+# Multiply accuracy values by 100
+accuracy_nb_percent <- accuracy_nb * 100
+accuracy_random_forest_percent <- accuracy_random_forest * 100
+accuracy_svm_percent <- accuracy_svm * 100
+
+# Create a data frame with the metrics for each model
+model_results_holdout <- data.frame(
+  Model = c("Naive Bayes", "Random Forest", "Support Vector Machines"),
+  Accuracy = c(accuracy_nb_percent, accuracy_random_forest_percent, accuracy_svm_percent),
+  Precision = c(overall_precision_nb * 100, overall_precision_random_forest * 100, overall_precision_svm * 100),
+  Recall = c(overall_recall_nb * 100, overall_recall_random_forest * 100, overall_recall_svm * 100),
+  F1_Score = c(f1_score_nb * 100, f1_score_random_forest * 100, f1_score_svm * 100)
+)
+
+# Melt the data frame for better visualization
+library(reshape2)
+model_comparison_melted <- melt(model_results_holdout, id.vars = "Model")
+
+# Plotting using ggplot2 - horizontal multi-panel plot
+library(ggplot2)
+ggplot(model_comparison_melted, aes(x = value,  y = Model, fill = variable)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~variable, scales = "free_x", ncol = 1) +
+  labs(title = "Hold out model performance (in Percentage)", x = "Model", y = "Metric Value (%)") +
+  theme_minimal() +
+  scale_fill_manual(values = c("#0073C2FF", "#EFC000FF", "#868686FF", "#CD853F")) +
+  theme(axis.text.y = element_text(hjust = 1))
+
+
+
+# Display the table using kable
+knitr::kable(model_results_holdout, caption = "Hold out table")
+
+
+
+
+
+```
+** Inference** Based on the Accuracy, F1 scores and recall the Random forest worked well out of the the models naive baye's and Support vector machines. The Better the F1 scores , better is the model. Even from the bar chart the random forest shows accuracy of 91% . F1 score of Random forest is 73.6% while for Support vector machine is 70% and for Naive Baye's score is 67%. 
+
+
+
+To compare which model worked well in K Fold cross validation , compared the three models and checked for F1 score, Precision and recall.
+
+```{r}
+# Create a data frame with model results
+model_results <- data.frame(
+  Model = c("Naive_Bayes_cv", "Random_forest_cv", "SupportVectorMachine_cv"),
+  Accuracy = c(accuracy_nb_cv * 100, accuracy_random_forest_cv * 100, accuracy_svm_cv * 100),
+  Precision = c(overall_precision_nb_cv * 100, overall_precsion_random_forest_cv * 100, overall_precision_svm_cv * 100),
+  Recall = c(overall_recall_nb_cv * 100, overall_recall_random_forest_cv * 100, overall_recall_svm_cv * 100),
+  F1score = c(f1_score_nb_cv * 100, f1_score_random_forest_cv * 100, f1_score_svm_cv * 100)
+)
+
+# Melt the data frame for better visualization
+library(reshape2)
+model_results_melted <- melt(model_results, id.vars = "Model")
+
+# Create a horizontal multi-panel plot for comparison
+library(ggplot2)
+ggplot(model_results_melted, aes(x = value, y = Model, fill = variable)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~variable, scales = "free_x", ncol = 1) +
+  labs(title = "K fold cross-validation model performance", x = "Percentage (%)") +
+  theme_minimal() +
+  scale_fill_manual(values = c("#0073C2FF", "#EFC000FF", "#868686FF", "#CD853F")) +
+  theme(axis.text.y = element_text(hjust = 1))
+
+
+
+# Display the table using kable
+knitr::kable(model_results, caption = "K fold cross validation method model performance")
+
+
+```
+
+
+
+# Plotting individual ROC curves (Receiver Operating characteristic curves ) Hold out method 
+
+##-Naive Baye's Classification Problem 
+
+```{r}
+
+
+target <- test_data$Group
+target_var <- as.numeric(target)
+
+
+# Generate multi-class ROC curve
+#roc_multiclass <- multiclass.roc(target_var, as.numeric(nb_predictions))
+#print(roc_multiclass)
+
+result <- pROC::multiclass.roc(predictions$class, target_var)
+
+
+plot.roc(result$rocs[[1]], 
+         print.auc=T,
+         legacy.axes = T,
+         main = "Plotting ROC-AUC Curve - Naive Baye's Classification")
+
+plot.roc(result$rocs[[2]],
+         add=T, col = 'red',
+         print.auc = T,
+         legacy.axes = T,
+         print.auc.adj = c(0,3))
+
+
+
+plot.roc(result$rocs[[3]],add=T, col = 'blue',
+         print.auc=T,
+         legacy.axes = T,
+         print.auc.adj = c(0,5))
+
+legend('bottomright',
+       legend = c('Converted',
+                  'Demented',
+                  'Nondemented'),
+       col=c('black','red','blue'),lwd=2)
+
+
+
+
+```
+
+**Inference** Plotting individual ROC curves (Receiver Operating characteristic curves ) Hold out method . 
+These ROC -AUC curves are used to evaluate the performance of classification models. This plot illustrated here has the true positive rate(TPR) also known as recall or sensitivity against the false positive rate FPR also known as 1- specificty at various threshold settings. 
+This AUC are under the curve provides an aggregate measure of performance across all possible classification thresholds. 
+The AUC score ranges from 0 to 1 where a score of 0.5 suggests no discriminative ability (which is equivalent to random guessing ) and a score of 1 indicates perfect classifcation. Each ROC curve corresponds to a different class or outcome being predicted by the model. In this case , the red curve corresponds to demented with AUC of 0.831, Blue color representing the  nondemented case with AUC score of 0.906 and black color representing the AUC curve of 0.491. Out of the three classes , the model wasn't able to predict the converted class which has AUC curve being 0.491. The Non demented class also has high AUC indicating strong performance but slightly less than for the demented class. This model is less effective in distinguishing the class over others. The ROC curves appear to be tightly clustered the top left corner of the plot which indicates high sensitivity and specificity for the Demented and non demented classes. The 'Converted' class curve is closer to the diagonal line of no-discrimination, which indicates weaker performance for this class. Therefore, this model is best able to distinguish only demented and non demented group but not good for Converted class.
+
+
+
+## Plotting ROC- AUC curves for Random Forest 
+
+ROC-AUC curve for Random Forest 
+
+
+```{r}
+
+
+# Target variable 
+target <- test_data$Group
+target_var <- as.numeric(target)
+
+
+# Generate multi-class ROC curve
+#roc_multiclass <- multiclass.roc(target_var, as.numeric(nb_predictions))
+#print(roc_multiclass)
+
+result <- pROC::multiclass.roc(random_forest_prediction, target_var)
+
+
+plot.roc(result$rocs[[1]], 
+         print.auc=T,
+         legacy.axes = T,
+         main = "Plotting ROC-AUC Curve - Random Forest")
+
+plot.roc(result$rocs[[2]],
+         add=T, col = 'red',
+         print.auc = T,
+         legacy.axes = T,
+         print.auc.adj = c(0,3))
+
+
+
+plot.roc(result$rocs[[3]],add=T, col = 'blue',
+         print.auc=T,
+         legacy.axes = T,
+         print.auc.adj = c(0,5))
+
+legend('bottomright',
+       legend = c('Converted',
+                  'Demented',
+                  'Nondemented'),
+       col=c('black','red','blue'),lwd=2)
+
+
+
+
+```
+
+**Inference** The  plot shows the ROC-AUc curve for Random Forest model which is used to evaluate the model's performance in classifying three classes Converted , Demented and non demented. The AUC curves for Converted are 0.734 , 0.936 for Demented and 0.907 for Non demented. Higher AUC scores indicate better model performance. The curves suggest that the model is most effective at distinguishing the demented and non demented class. However, comparing the model performance with Naive Bayes, the model performs better in distinguishing the classes converted, demented and non demented. 
+
+
+
+ROC-AUC curve for Support Vector machines 
+
+```{r}
+
+
+
+# Install and load the pROC package if you haven't already
+# install.packages("pROC")
+library(pROC)
+
+# Assuming svm_predictions contain your predictions and target_var is your true labels
+
+# Generate multi-class ROC curve
+result <- pROC::multiclass.roc(svm_predictions, target_var)
+
+# Plotting ROC-AUC curves for each class separately
+plot.roc(result$rocs[[1]], 
+         print.auc = TRUE,
+         legacy.axes = TRUE,
+         main = "Plotting ROC-AUC Curve - Support Vector Machines")
+
+plot.roc(result$rocs[[2]],
+         add = TRUE,
+         col = 'red',
+         print.auc = TRUE,
+         legacy.axes = TRUE,
+         print.auc.adj = c(0, 3))
+
+plot.roc(result$rocs[[3]],
+         add = TRUE,
+         col = 'blue',
+         print.auc = TRUE,
+         legacy.axes = TRUE,
+         print.auc.adj = c(0, 5))
+
+# Adding legend
+legend('bottomright',
+       legend = c('Converted', 'Demented', 'Nondemented'),
+       col = c('black', 'red', 'blue'),
+       lwd = 2)
+
+
+
+```
+**Inference** The  plot shows the ROC-AUC curve for Support Vector machines to evaluate the model's performance in classifying three classes
+Converted, Demented and non demented. The AUC curves for Converted are 0.652, 0.929 for Demented and 0.907 for Non demented. Higher the Auc scores indicate the better model performance. The curves suggest that the model is effective at distinguishing demented , non demented class. However, comparing the model performance with Support vector machines, the model performs well for distinguishing demented and non demented classes.
+
+
+
+# Model Tuning & Performance Improvement
+
+
+use of bagging with homogeneous learners
+
+The bagging is known as bootstrap aggregation which is the ensemble learning technique that helps to improve the performance and accuracy of machine learning algorithms. It is used to deal with bias-variance trade-offs and reduces the variance of a prediction model. Bagging avoids overfitting of data and is used for both regression and classification models, specifically for decision tree algorithms. This model creates multiple copies of a single type of algorithm (homogeneous learners) and training them independently on different subsets of the training data. The process involves creating several models (base learners) using a resampling technique called bootstrapping and then aggregating their predictions to make a final prediction.
+
+
+
+```{r}
+
+library(dplyr)       #for data wrangling
+library(e1071)       #for calculating variable importance
+library(caret)       #for general model fitting
+library(rpart)       #for fitting decision trees
+library(ipred)
+library(gmodels)#for fitting bagged decision trees
+
+
+set.seed(123)
+
+#fit the bagged model
+bag <- bagging(
+  formula = Group ~ .,
+  data = training_data,
+  # Setting the number of bags
+  nbagg = 30,   
+  coob = TRUE,
+  # minsplit tells the model to only require 2 observations in a node to split.
+  # cp = 0 is the complexity parameter .By setting it to 0, we don’t require the model to be able to improve the overall fit by any amount in order to perform a split.
+  control = rpart.control(minsplit = 2, cp = 0)
+)
+
+#display fitted bagged model
+bag
+
+
+
+# Using the model to make predictions
+# Use the fitted bagged predictions to predict test features
+bagged_predictions <- predict(bag, newdata = test_features)
+
+
+
+# Create a confusion matrix
+bagged_model_confusion_matrix <- table(Predicted = bagged_predictions, Actual = test_data$Group)
+
+
+# Create a cross-table
+crosstab_bagged_model <- CrossTable(bagged_predictions, test_data$Group,
+                                      prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+                                      dnn = c('predicted', 'actual'))
+
+
+# Calculating accuracy 
+accuracy_bagged_model <- mean(bagged_predictions ==  test_data$Group)
+
+
+
+# Calculating precision 
+precision_bagged_model <- diag(bagged_model_confusion_matrix)/ rowSums(bagged_model_confusion_matrix)
+# Calculating overall precision 
+overall_precision_bagging <- mean(precision_bagged_model, na.rm = TRUE)
+
+
+# Calculate recall 
+recall_bag <- diag(bagged_model_confusion_matrix) / colSums(bagged_model_confusion_matrix)
+# Calculating overall recall 
+overall_recall_bagging <- mean(recall_bag, na.rm = TRUE)
+
+
+
+# Print the accuracy and precision for support vector machine cross validated
+cat("Overall Accuracy:", round(accuracy_bagged_model * 100, 2), "%\n")
+cat("Precision :", round(overall_precision_bagging * 100, 2), "%\n")
+cat("Recall  :", round(overall_recall_bagging * 100, 2), "%\n")
+
+# F1 score for support vector machine cross validated
+f1_score_bagg <- 2 * (overall_precision_bagging * overall_recall_bagging) / (overall_precision_bagging + overall_recall_bagging)
+cat("F1 score for Bagged model Random forest:", round(f1_score_bagg * 100, 2), "%\n")
+
+
+
+
+
+
+
+
+
+```
+**Inference** Bagging was performed on model using classification trees with 30 bootsrap replications .coob = TRUE: Indicates whether the out-of-bag (OOB) estimate of misclassification error should be calculated. When set to TRUE, it means that the OOB estimate was calculated.minsplit = 2 sets the minimum number of observations required in a node for a split to occur, and cp = 0 is the complexity parameter controlling the tree's complexity. The out of estimate of misclassification error was calculated having value, 0.1181, representing the estimated error rate of the bagging model when making predictions on unseen data. It is an estimate obtained by evaluating the model's performance on the out-of-bag samples (data points not included in the bootstrap sample used for training). Based on the crosstable , the model predicted 2 cases of converted correctly, while 43 cases for demented and 53 cases for non demented. Overall accuracy was calculated based on number of correct predictions /total number of Instances. Precision was calculated on the basis of true positive /true positive + false psoitive. Recall was calculated on True positive /true positive and false negative. F1 score which is harmonic mean of precision and recall was calculated by 2 * (_precision_ *_recall_bagging) / (_precision_bagging + recall).     
+
+construction of ensemble model as a function
+Ensemble methods combine multiple individual models to create a stronger model that often performs better than any individual base model. ensemble is a technique that combines multiple individual models (weak learners) to create a stronger, more accurate predictive model (strong learner). 
+
+```{r}
+
+
+# Applying ensemble predictions function 
+ensemble_predictions <- function(pred_svm, pred_rf, pred_nb, actual_values) {
+    # Each model predictions from SVM, Random Forest, and Naive Bayes are stored in the list 
+    ensemble_pred <- list(SVM = pred_svm, Random_Forest = pred_rf, Naive_Bayes = pred_nb)
+    
+    # Voting mechanism for ensemble prediction - using simple majority voting
+    # If at least two models agree on a class, choose that class; otherwise, choose SVM's prediction
+    # This line combines the individual model predictions using cbind (column-wise binding) and then applies the apply function row-wise (1 specifies row-wise operation). Inside the apply function, for each row (x), it performs the logic for ensemble prediction.
+    final_prediction <- apply(do.call(cbind, ensemble_pred), 1, function(x) {
+      # The occurances of classes in each row is sorted in x with highest count using mode and using table, sort method
+        mode_value <- names(sort(table(x), decreasing = TRUE))[1]
+        # to determine whether two models or more agree on the predicted class, the mode value (mode_value) is compared to the predictions in the row (x). It returns the agreed-upon class if there is agreement.
+        if (sum(x == mode_value) >= 2) {
+            return(mode_value)
+        } else {
+          #  in case there's no agreement among models (less than two models predicted the same class), it defaults to the prediction of the first model(SVM).
+            return(x[1])
+        }
+    })
+    
+    # Create confusion matrix for the ensemble predictions
+    confusion_matrix_ensemble <- table(Predicted = final_prediction, Actual = actual_values)
+    
+    # Generate and print the cross-table for the ensemble model
+    crosstab_ensembl <- CrossTable(final_prediction , test_data$Group,
+                                prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+                                dnn = c('predicted', 'actual'))
+
+
+    
+    # Calculate accuracy for ensemble
+    accuracy_ensemble <- sum(diag(confusion_matrix_ensemble)) / sum(confusion_matrix_ensemble)
+    
+    # Calculating precision for ensemble
+    precision_ensemble <- diag(confusion_matrix_ensemble) / rowSums(confusion_matrix_ensemble)
+    # Calculate overall precision (macro-averaging)
+    overall_precision_ensemble <- mean(precision_ensemble, na.rm = TRUE)
+    
+    # Calculate recall for ensemble
+    recall_ensemble <- diag(confusion_matrix_ensemble) / colSums(confusion_matrix_ensemble)
+    # Calculating overall recall through macroaveraging 
+    overall_recall_ensemble <- mean(recall_ensemble, na.rm = TRUE)
+    f1_score_ensemble <- 2 * (overall_precision_ensemble * overall_recall_ensemble) / (overall_precision_ensemble + overall_recall_ensemble)
+
+    
+    # Print accuracy, precision, and recall for the ensemble model
+    cat("Overall Accuracy (Ensemble):", round(accuracy_ensemble * 100, 2), "%\n")
+    cat("Precision of (Ensemble) :", round(overall_precision_ensemble * 100, 2), "%\n")
+    cat("Recall of ensemble method:", round(overall_recall_ensemble * 100, 2), "%\n")
+    cat("F1 score ensemble:", round(f1_score_ensemble * 100, 2), "%\n")
+    
+    
+    # Return confusion matrix and metrics
+    return(list(confusion_matrix = confusion_matrix_ensemble,
+                accuracy = accuracy_ensemble,
+                precision = overall_precision_ensemble,
+                recall = overall_recall_ensemble,
+                f1_score_ = f1_score_ensemble))
+}
+
+# Example usage:
+ensemble_results <- ensemble_predictions(svm_predictions, random_forest_prediction, predictions$class, test_data$Group)
+
+
+
+
+```
+
+
+
+#Comparision of ensemble with the models 
+
+Created an ensemble metrics to feed the accuracy precision , recall and F1 score and compared with the individual models (Naive Baye's , Random Forest and Support vector machines)
+
+
+```{r}
+
+
+# Ensemble model metrics
+ensemble_metrics <- c(
+  "Ensemble", 
+  round(ensemble_results$accuracy * 100, 2), 
+  round(ensemble_results$precision * 100, 2),
+  round(ensemble_results$recall * 100, 2), 
+  round(ensemble_results$f1_score * 100, 2)  
+)
+
+# Individual model metrics (adjusted for two decimal places)
+individual_metrics <- rbind(
+  c("Naive Bayes", round(accuracy_nb_percent, 2), round(overall_precision_nb * 100, 2), round(overall_recall_nb * 100, 2), round(f1_score_nb * 100, 2)),
+  c("Random Forest", round(accuracy_random_forest_percent, 2), round(overall_precision_random_forest * 100, 2), round(overall_recall_random_forest * 100, 2), round(f1_score_random_forest * 100, 2)),
+  c("Support Vector Machines", round(accuracy_svm_percent, 2), round(overall_precision_svm * 100, 2), round(overall_recall_svm * 100, 2), round(f1_score_svm * 100, 2))
+)
+
+# Combine ensemble and individual model metrics
+comparison_metrics <- rbind(ensemble_metrics, individual_metrics)
+
+# Create a data frame for the comparison table
+colnames(comparison_metrics) <- c("Model", "Accuracy", "Precision", "Recall", "F1_Score")
+comparison_df <- as.data.frame(comparison_metrics)
+
+# Display the table using kable
+knitr::kable(comparison_df, caption = "Ensemble vs other models")
+
+
+
+# Melt the data frame for better visualization
+library(reshape2)
+model_result_comp <- melt(comparison_df, id.vars = "Model")
+
+
+
+# Line chart
+ggplot(model_result_comp, aes(x = Model, y = value, group = variable, color = variable)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Model Metrics Comparison", x = "Model", y = "Value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels if needed
+
+
+
+
+```
+**Inference** Based on the above models, Random forest performed well out of the other 3 models. 
+
+
+
+
+
+
+
+

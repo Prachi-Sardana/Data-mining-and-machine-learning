@@ -1,0 +1,146 @@
+---
+title: "DA5020.P1.Sardana.Prachi"
+author: "Prachi Sardana"
+date: "2024-02-11"
+output: html_document
+---
+
+
+Part 1
+Question1  
+Create a dataframe with 4 variables. The 4 variables should be doctor_type,
+doctor_lastname, location, AVG_Rating
+question 1 second part doubt (printing a screenshot)
+
+
+```{r}
+
+library(ggplot2)
+library(RCurl)
+#nstall.packages("xml2")
+library(xml2)
+
+
+
+
+
+```
+
+```{r}
+# Creating a dataframe with the following variables
+doctor_df <- data.frame(
+  doctor_type = c("PCP","Psychiatrist", "Surgeon", "Anesthesia"),
+  doctor_lastname = c("Smith", "Dame", "Jones", "Zayas"), 
+  location = c("MA", "ME", "NH", "VT"), 
+  AVG_Rating = c(7,9,8,9))
+
+# Printing the dataframe 
+print(doctor_df)
+                        
+                        
+#knitr::include_graphics("C:/Project Machine learning/DA5020.png", error=FALSE)`
+                                        
+
+```
+Question 2 
+Using the dataframe above...
+Select row 1 in column 2, what was selected?
+Select rows 2 through 4, what was selected?
+Select the last column, what was selected?
+
+
+```{r}
+
+# Select row1 in coloumn2
+row1_col2 <- doctor_df[1,2]
+#print(row1_col2)
+
+# Selecting rows2 through 4 
+rows2_through4 <- doctor_df[2:4, ]
+#print(rows2_through4)
+
+# Selecting the last coloumn of doctor_df dataframe
+last_col <- doctor_df[, ncol(doctor_df)]
+#print(last_col)
+
+
+```
+Question 3
+Using the dataset Mtcars create a scatterplot showing the relations between any two
+variables of your choosing. Explain why you picked those variables. Each point should also
+be based on a color scheme of your choosing
+
+```{r}
+# Loading the mtcars data 
+mtcars_data <- mtcars
+
+
+# Creating the scatterplot of miles per gallon with horse power , factoring by cylinder
+ggplot(mtcars_data, aes(x = mpg, y = hp, color = factor(cyl))) +
+  geom_point(size = 3) +
+  labs(x = "Miles per gallon", y = "Horsepower", 
+       title = "Scatterplot of MPG vs Horsepower by Cylinder") +
+  scale_color_manual(values = c("purple", "pink", "red")) +
+  theme_minimal() +
+  # Adjusting the legend position at the bottom
+  theme(legend.position = c(0.9, 0.9)) +  
+  #  using hjust 0.5 to adjust the title to the center
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  # Setting scales for x axis and y axis by proper breaks
+  scale_x_continuous(breaks = seq(10, 35, by = 2)) +  
+  scale_y_continuous(breaks = seq(50, 350, by = 50))  
+
+
+```
+The scatterplot above illustrates the relationship between miles per gallon and horsepower since mpg is an important indicator of fuel efficiency aiming to improve the car performance and horsepower is the power that engine can produce which is a primary factor in measuring the vehicles performance.The number of cylinders in an engine impact both mpg and horsepower. Engines with more cylinders produce more power but are less fuel efficient as more cylinders generate more power and tend to have higher displacement , leading to more fuel consumption. Based on the plot, the Mpg and horsepower are related and their relationships vary with respect to the cylinder counts. The vehicles that have higher horsepower tend to have lower miles per gallon, particularly with greater number of cylinders. Based on the color schema of cylinders, their relationship varies. 
+
+
+Question 4
+Using the dataset MTcars perform a summary statistic on the dataset and calculate the
+pearson coefficient of the correlation R picking two variables of choice. Explain why you
+picked those variables and explain the purpose of a pearson coefficient
+
+```{r}
+# Summary statistics of mtcars_data showing the data distribution of all variables in the data
+summary(mtcars_data)
+
+# Calculating the pearson correlation coefficient between mpg and weight 
+pearson_corr <- cor.test(mtcars_data$mpg, mtcars_data$wt, method = "pearson")
+pearson_corr
+```
+Calculated the summary statistics on mtcars dataset.The pearson coorelation cofficient is an important indicator which indicates the direction of relationship between the two variables. Calculating the correlation coefficient between two key variables miles per gallon and weight which are important in understanding the car performance.  The variables are negatively correlated with each other indicating that higher the weight of the car , the lower is the fuel efficiency. i.e mpg(Miles per gallon). 
+
+
+
+Part 2 
+
+```{r}
+
+
+
+# Loading url of XML data 
+#url <- "https://data.ny.gov/api/views/ngbt-9rwf/rows.xml"
+
+# Read xml data from the url 
+#xml_read <- xml2::read_xml(url)
+
+
+# Load the XML data directly from the URL
+xml_url <- getURL("https://data.ny.gov/api/views/ngbt-9rwf/rows.xml")
+
+# Parse the data 
+xml_data <- xmlTreeParse(xml_url, useInternalNodes = TRUE)
+
+# Convert the XML url data to a data frame
+xml_df <- xmlToDataFrame(xml_data)
+
+# Display the dimensions of the data frame
+dim(xml_df)
+head(xml_df)
+
+
+
+
+
+
+```

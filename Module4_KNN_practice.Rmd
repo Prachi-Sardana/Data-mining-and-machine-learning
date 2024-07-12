@@ -1,0 +1,177 @@
+---
+title: "Practice / kNN"
+author: Prachi Sardana
+output:
+  word_document: default
+  html_document: default
+---
+
+Loaded the prostate cancer data and structured the data which contain 100 observations of 10 variables. The data consist of 8 numerical variables and 1 categorical variable ID
+
+```{r}
+cancer_data <- read.csv("C:/Users/sanya/Downloads/Prostate_Cancer (1).csv")
+str(cancer_data)
+```
+
+Removing the first variable id from the data.Through `table()` function determining the diagnosis result of patients where 38 patients having benign tumor while 62 patients have malignant tumor.Refactored the diagnosis into benign and malignant term of prostate cancer.
+
+```{r}
+
+prostatecancer_data <- cancer_data[-1]
+
+### Through table function determining the diagnosis result of patients where 38 patients having benign tumor while 62 patients have malignant tumor
+table(prostatecancer_data$diagnosis_result)
+
+### To refactor them into benign and malignant term
+
+prostatecancer_data$diagnosis <- factor(prostatecancer_data$diagnosis_result, levels = c("B","M"), labels = c("Benign","Malignant"))
+
+### To interpret it in percentages
+round(prop.table(table(prostatecancer_data$diagnosis))*100, digits = 1)
+
+
+```
+
+Normalizing the numeric data using `min-max normalization` function for (Feature scaling)
+except the diagnosis result which is non numeric. Used `summary()` function to see if various parameters like mean , median , mode etc are normalized.
+
+```{r}
+
+normalize <- function(x){
+  return ((x - min(x))/max(x)- min(x))}
+
+### Normalizing the prostate cancer data. Since the first variable is diagnosis result which is not numeric, we'll normalize the data from the 2nd row till 9th since there are 10 rows in total
+prostatecancer_data_n <- as.data.frame(lapply(prostatecancer_data[2:9],normalize))
+
+# using summary function to check if the features are normalized
+summary(prostatecancer_data_n$radius)
+summary(prostatecancer_data_n$perimeter)
+summary(prostatecancer_data_n$area)
+
+
+```
+
+After feature normalization Splitting the prostrate cancer data set into training and test data where  1 to 65 was taken as a training data and rest as testing data. Labelled, the target to predict the diagnosis result 
+
+```{r}
+
+training_prc <- prostatecancer_data_n[1:65,]
+test_prc <- prostatecancer_data_n[66:100,]
+
+### Labeling the target variable diagnosis result in 1st coloumn
+
+training_prc_labels <- prostatecancer_data[1:65,1]
+testing_prc_labels <- prostatecancer_data[66:100,1]
+
+
+```
+
+Training model knn using the  `knn formula(train,test,cl = label, k)` where cl = class label and `K` is calculated by `sqrt` of **number of observation**. Here observations are 100 hence **k = 10**. Imported the library class and predicted the model prostrate cancer predict by knn formula 
+
+```{r}
+
+library(class)
+prostate_cancer_pred <- knn(train = training_prc,test = test_prc,cl = training_prc_labels,k = 10)
+
+```
+
+Evaluating the model performance using crosstable function and loading gmodel package in which this function is located
+
+Out of 35 observations, total 9 cases have been accurately predicted as Benign i.e 25.7% were true negative and 16 out of 35 (45.7%) were accurately predicted as malignant which were true positive. Thus a total 16 out of 35 predictions were true positive.There were no cases of false negative which were malignant in nature.There were 19 cases which were actually benign in nature which got predicted as malignant tumor among the patients.Accuracy of model **(TN+TP/35)** = 71.4% 
+
+
+```{r}
+
+library(gmodels)
+CrossTable(x = testing_prc_labels, y = prostate_cancer_pred, prop.chisq = FALSE)
+
+
+
+```
+
+Knn classification using **caret package**
+
+```{r}
+
+library(caret)
+str(prostatecancer_data)
+
+```
+
+Seeded the data to 124 to make the data replicable
+used `createDataPartition()` from caret package to split data into training and test data set. y parameter specifies the target variable , p is the proportion of data to assign it to training_set and list = false to make sure that the result is a vector of indices.
+Checked the dimensions using `dim()` function for training and test data set.
+
+```{r}
+## Set.seed method used so that data can be replicable
+## createDataPartition function split the data into training and test set.
+set.seed(124)
+intrain <- createDataPartition(y = prostatecancer_data$diagnosis_result, p = 0.7, list = FALSE)
+
+# training set
+train_prc <- prostatecancer_data[intrain,]
+#testing set
+testset_prc <- prostatecancer_data[-intrain,]
+
+# Checking the dimensions of training and test data set
+dim(train_prc)
+dim(testset_prc)
+
+
+```
+
+Converted "diagnosis_result" column in the training dataset (train_prc) into a factor variable which helps in classification tasks.
+Used `TrainControl()` function to control the train process by using the method "repeatedcv"(repeated cross validation) with 10-fold cross-validation, repeated three times which helps in assessing the model performance.Used k-Nearest Neighbors (k-NN) classification model for training the function. It uses the "diagnosis_result" as the target variable and includes all the other columns in the dataset. The "knn" method is used for k-NN classification. The trControl parameter specifies the control settings for training (cross-validation), and tuneLength indicates how many different values of "k" to consider.knn_fit prints the summary of the k-NN model, which includes information about the training process, the best model parameters, and performance statistics.based on knn fit k = 5 was used for finding the accuracy of model.
+
+  
+```{r}
+
+# summary(prostatecancer_data)
+
+train_prc$diagnosis_result = factor(train_prc[["diagnosis_result"]])
+
+# Train control using repeatedcv method 
+trctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+
+# setting the seed to 124
+set.seed(124)
+
+# Knn fit 
+
+# Used k-Nearest Neighbors (k-NN) classification model for training the function.
+knn_fit <- train(diagnosis_result ~., data = train_prc, method = "knn",
+ trControl=trctrl,
+ preProcess = c("center", "scale"),
+ tuneLength = 10)
+
+# knn_fit prints the summary of the k-NN model, which includes information about the training process, the best model parameters, and performance statistics.
+
+knn_fit
+
+
+```
+
+Predicting the test data by using knn-fit. It computes the predicted diagnosis results based on the model's input features and store these predictions in the test_pred variable.
+The test set levels are factored such that it's the same factor levels for training set as well which is important to make comparisons and evaluate model performance. It also computes accuracy (e.g., true positives, true negatives, false positives, and false negatives).
+
+```{r}
+
+# Predicting the test data
+test_pred <- predict(knn_fit, newdata = testset_prc)
+print(test_pred)
+
+# Factoring the test data set levels diagnosis_result
+testset_prc$diagnosis_result <- factor(testset_prc$diagnosis_result, levels = levels(train_prc$diagnosis_result))
+
+# creating a confusion matrix to evaluate the performance of KNN model
+confusionMatrix(test_pred, reference = testset_prc$diagnosis_result)
+
+
+
+```
+Based on the confusion matrix the accuracy came out to be 96.5 %. The matrix gives the reference and the prediction labels. The true positives were found to be 10 i.e the instances where the class was truly benign. The true negatives were 18 which were classified as malignant. The false positive was 1 which was incorrectly classified as Benign. False negative were 0 that were incorrectly classified as malignant. Based on 95% confidence interval the value of accuracy ranges from 0.822 to 0.991.kappa value is 0.92 indicating substancial agreement with the prediction and true labels.
+
+*Comparing the model accuracy*
+
+The kNN algorithm calculated in respect to caret package were 96.5 % which is higher while accuracy through class package came out to be 71.4 %. Since it uses different methods for finding the accuracy like class package using cross validation method and caret method is based on classification regression. Both used different K values for checking the accuracies of the model.
+
